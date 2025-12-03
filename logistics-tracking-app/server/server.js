@@ -12,7 +12,7 @@ import rateLimit from 'express-rate-limit';
 //import product from "./routes/product.js";
 //import payment from "./routes/payment.js";
 //import health from "./routes/health.js";
-
+import userRouter from "./routes/user.js"
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -37,7 +37,7 @@ app.use(limiter);
 //app.use('/product', product);
 //app.use('/payment', payment);
 //app.use('/health', health);
-
+app.use('/user',userRouter)
 // ✅ Initialize MongoDB and start server
 connectToDatabase()
   .then(() => {

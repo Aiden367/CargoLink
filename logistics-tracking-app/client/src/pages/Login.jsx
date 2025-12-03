@@ -1,17 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '../components/common/Input'
+import axios from 'axios';
 
-function DoCalculation() {
-    const firstName = "aiden"
-    const secondName = "carli"
-    const thirdName = "john"
-
-    const names = [firstName, secondName, thirdName]
-
-    for (let i = 0; i < names.length; i++) {
-        console.log(names[i]);
-    }
-}
 
 const CombineUsernames = () =>{
     const firstName = "Aiden"
@@ -28,23 +18,22 @@ const CombineUsernames = () =>{
 const Login = () => {
 
     const [email, setEmail] = useState("");
-    //const jellyBeanColour = "green"
-    const [username, setUsername] = useState("");
-    const [submittedData, setSubmittedData] = useState("");
-    const handleSubmit = (e) => {
+    const [password,setPassword] = useState("");
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        const formData = {
-            email: email,
-            username: username,
-        }
+        const userLoginData = {email,password}
+        try{
+          const response = await axios.post("http://localhost:5000/user/Login",userLoginData)
+          console.log("Login Successful", response.data);
 
-        setSubmittedData(formData);
+        }catch(err){
+         console.error("Login Failed", err.message);
+        }
     }
 
     return (
         <div>
             <div>
-                <CombineUsernames/>
                 <h1>Login</h1>
                 <p>Email</p>
                 <form onSubmit={handleSubmit}>
@@ -57,21 +46,14 @@ const Login = () => {
                         error={email && !email.includes("@") ? "Invalid email" : ""}
                     />
                     <Input
-                        label="Username"
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Enter Username"
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter Password"
                     />
                     <button type="submit">Submit</button>
                 </form>
-                {submittedData && (
-                    <div>
-                        <h3>Submitted Data:</h3>
-                        <p>email: {submittedData.email}</p>
-                        <p>Username: {submittedData.username}</p>
-                    </div>
-                )}
             </div>
         </div>
     )
