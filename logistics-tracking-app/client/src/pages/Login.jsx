@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '../components/common/Input'
 import axios from 'axios';
-
+import { useNavigate } from "react-router-dom";
 
 
 
 const Login = () => {
-
+    const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [password,setPassword] = useState("");
     const handleSubmit = async (e) => {
@@ -15,6 +15,7 @@ const Login = () => {
         try{
           const response = await axios.post("http://localhost:5000/user/Login",userLoginData)
           console.log("Login Successful", response.data);
+          navigate("/home");
 
         }catch(err){
          console.error("Login Failed", err.message);

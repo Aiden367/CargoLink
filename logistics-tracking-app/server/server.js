@@ -6,13 +6,8 @@ import * as cheerio from 'cheerio';
 import xss from 'xss-clean';  // ✅ Changed from require
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-
-// ✅ Changed all requires to imports
-//import user from "./routes/user.js";
-//import product from "./routes/product.js";
-//import payment from "./routes/payment.js";
-//import health from "./routes/health.js";
 import userRouter from "./routes/user.js"
+import orderRouter from "./routes/order.js"
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -22,7 +17,6 @@ app.use(express.json());
 app.use(xss());
 app.use(helmet());
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 100, 
@@ -32,13 +26,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ✅ Routes (removed duplicates)
-//app.use('/user', user);
-//app.use('/product', product);
-//app.use('/payment', payment);
-//app.use('/health', health);
 app.use('/user',userRouter)
-// ✅ Initialize MongoDB and start server
+app.use('/order',orderRouter)
+
 connectToDatabase()
   .then(() => {
     app.listen(PORT, () => {

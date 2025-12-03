@@ -27,7 +27,7 @@ const Register = () => {
         try {
             const response = await axios.post("http://localhost:5000/user/Register", userData)
             console.log("User Created", response.data)
-            navigate("/Login")
+            navigate("/login")
         } catch (err) {
             console.log("Cannot save user");
             console.error(err)
