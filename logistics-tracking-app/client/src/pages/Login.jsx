@@ -3,17 +3,7 @@ import { Input } from '../components/common/Input'
 import axios from 'axios';
 
 
-const CombineUsernames = () =>{
-    const firstName = "Aiden"
-    const lastName = "Byrne"
-    const combinedNames = firstName + lastName;
-    console.log(combinedNames);
-    return(
-        <div>
-            <p>This is my full name{combinedNames}</p>
-        </div>
-    )
-}
+
 
 const Login = () => {
 
