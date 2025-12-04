@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import userRouter from "./routes/user.js"
 import orderRouter from "./routes/order.js"
+import customerRouter from "./routes/customer.js"
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -28,6 +29,7 @@ app.use(limiter);
 
 app.use('/user',userRouter)
 app.use('/order',orderRouter)
+app.use('/customer',customerRouter)
 
 connectToDatabase()
   .then(() => {
