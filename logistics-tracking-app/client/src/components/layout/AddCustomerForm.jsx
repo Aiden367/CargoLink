@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input } from '../components/common/Input'
+import { Input } from '../common/Input'
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 

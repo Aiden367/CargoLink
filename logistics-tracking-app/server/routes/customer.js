@@ -21,12 +21,12 @@ router.post('/AddCustomer',authenticateToken,async(req,res)=>{
      const newCustomer = await customer.save();
      res.status(201).json(newCustomer)
    }catch(err){
-    res.status(500).json({message:message.err})
+    res.status(500).json({message: "Could not save customer"})
    }
 
 })
 
-router.get('/GetAllCustomers',async(req,res) =>{
+router.get('/GetAllCustomers',authenticateToken,async(req,res) =>{
     try{
        const customer = await Customer.find()
        if(customer == null){

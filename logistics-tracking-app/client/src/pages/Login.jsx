@@ -15,6 +15,7 @@ const Login = () => {
         try{
           const response = await axios.post("http://localhost:5000/user/Login",userLoginData)
           console.log("Login Successful", response.data);
+          localStorage.setItem("accessToken", response.data.accessToken);
           navigate("/home");
 
         }catch(err){

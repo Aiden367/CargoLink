@@ -2,11 +2,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-
+import Activity from '../common/Activity';
 const DisplayCustomers = ({customers, onRefresh}) => {
+
+    const[loading,setLoading] = useState(false);
+
+    const handleClick = async () => {
+        setLoading(true);          
+        await onRefresh();       
+        setLoading(false);         
+    }
     return(
         <div>
-            <button onClick={(onRefresh)}>Display customers</button>
+            <button onClick={(handleClick)}>Display customers</button>
+            {loading && <Activity/>}
             <table>
              <thead>
                 <tr>Customer ID</tr>
