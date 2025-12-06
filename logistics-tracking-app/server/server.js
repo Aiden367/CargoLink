@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import userRouter from "./routes/user.js"
 import orderRouter from "./routes/order.js"
 import customerRouter from "./routes/customer.js"
+import { createClient } from 'redis';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -30,6 +31,14 @@ app.use(limiter);
 app.use('/user',userRouter)
 app.use('/order',orderRouter)
 app.use('/customer',customerRouter)
+
+
+
+export const redisClient = createClient({ url: 'redis://localhost:6379' });
+
+redisClient.connect()
+    .then(() => console.log('✅ Connected to Redis'))
+    .catch(err => console.error('❌ Redis connection error:', err));
 
 connectToDatabase()
   .then(() => {
