@@ -86,26 +86,6 @@ router.patch('/EditCustomer', authenticateToken, getCustomer, async (req, res) =
 
 
 
-router.post("/UpdateDriverLocation", authenticateToken, async (req, res) => {
-    try {
-        const { driverId, longitude, latitude } = req.body;
-        if (!driverId || longitude == null || latitude == null){
-            return res.status(400).json({ message: "Missing fields" });
-        }
-        await redisClient.geoAdd("drivers", {
-            longitude,
-            latitude,
-            member: driverId
-        });
-
-        res.json({ message: "Driver location updated" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Could not update driver location" });
-    }
-});
-
-
 
 
 export default router;
