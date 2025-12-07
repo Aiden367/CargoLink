@@ -16,6 +16,10 @@ const orderSchema = new Schema({
     type: String,
     unique: true
   },
+  driverId:{
+    type:String,
+    required:true
+  },
   customerId: {
     type: String,
     required: true
@@ -32,10 +36,6 @@ const orderSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  assignedDriver: {
-    type: String,
-    required: true
-  }
 });
 
 // Pre-save hook to auto-generate sequential orderID

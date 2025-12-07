@@ -4,12 +4,12 @@ import { authenticateToken } from '../middleware/auth.js'
 import { getOrder } from '../middleware/recieveOrder.js'
 const router = Router();
 
-router.post('/CreateOrder', authenticateToken, async (req, res) => {
+router.post('/CreateOrder',authenticateToken, async (req, res) => {
     const orderData = new Order({
-        customerId: req.user.id,
+        driverId : req.body.driverId,
+        customerId: req.body.customerId,
         shipmentDetails: req.body.shipmentDetails,
-        status: req.body.status,
-        assignedDriver: req.body.assignedDriver
+        status: req.body.status
     })
     try {
         const newOrder = await orderData.save();
