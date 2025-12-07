@@ -9,27 +9,34 @@ import Driver from '../models/customer.js'
 const DEFAULT_EXPERIRATION = 3600
 const router = Router();
 
+// Add this: Store customer location in Redis for faster queries
 router.post('/AddCustomer', authenticateToken, async (req, res) => {
     try {
-        const { shopName, longitude, latitude } = req.body;
+        const { shopName, longitude, latitude, address } = req.body;
+        if (!shopName || longitude == null || latitude == null) {
+            return res.status(400).json({ message: "Fields are missing" });
+        }
         const customer = new Customer({
             shopName,
             location: {
                 type: "Point",
                 coordinates: [longitude, latitude]
-            }
-        })
-        if (shopName == null || longitude == null || latitude == null) {
-            return res.status(401).json({ message: "Fields are missing" })
-        }
+            },
+            address
+        });
         const newCustomer = await customer.save();
+        await redisClient.geoAdd("customers", {
+            longitude: parseFloat(longitude),
+            latitude: parseFloat(latitude),
+            member: newCustomer._id.toString()
+        });
         await redisClient.del("customers");
-        res.status(201).json(newCustomer)
+        res.status(201).json(newCustomer);
     } catch (err) {
-        res.status(500).json({ message: "Could not save customer" })
+        console.error(err);
+        res.status(500).json({ message: "Could not save customer", error: err.message });
     }
-
-})
+});
 
 router.get('/GetAllCustomers', authenticateToken, async (req, res) => {
     try {

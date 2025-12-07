@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 const AddCustomerForm = () => {
     const [shopName, setShopName] = useState('')
-    const [customerId, setCustomerId] = useState('')
     const [longitude, setLongitude] = useState('')
     const [latitude, setLatitude] = useState('')
     const handleSubmit = async (e) => {

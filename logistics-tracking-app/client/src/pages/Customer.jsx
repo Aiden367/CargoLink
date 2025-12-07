@@ -6,12 +6,8 @@ import CustomerList from '../components/layout/DisplayCustomers'
 import AddCustomerForm from '../components/layout/AddCustomerForm';
 import  Navbar  from '../components/layout/navbar.jsx';
 const Customer = () => {
-    const[shopName,setShopName] = useState('')
-    const[customerId,setCustomerId] = useState('')
-    const[longitude,setLongitude] = useState('')
-    const[latitude,setLatitude] = useState('')
     const[customerList,setCustomerList] = useState([])
-
+    
     const displayAllCustomer = async (e) =>{
         try{
         const response= await axios.get('http://localhost:5000/customer/GetAllCustomers',{

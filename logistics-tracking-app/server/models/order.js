@@ -1,56 +1,56 @@
+// models/order.js
 import mongoose from 'mongoose';
 
-const { Schema } = mongoose;
-
-// Counter schema for sequential orderIDs
-const counterSchema = new Schema({
-  _id: String, // e.g., "orderID"
-  seq: { type: Number, default: 0 }
+const orderSchema = new mongoose.Schema({
+    orderId: {
+        type: String,
+        unique: true,
+        default: () => 'ORDER-' + Date.now() + '-' + Math.floor(Math.random() * 1000)
+    },
+    customerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customer',
+        required: true
+    },
+    driverId: {
+        type: String, // Redis driver ID
+        default: null
+    },
+    customerLocation: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], 
+            required: true
+        }
+    },
+    deliveryAddress: {
+        street: String,
+        city: String,
+        postalCode: String
+    },
+    shipmentDetails: {
+        items: [String],
+        weight: Number,
+        notes: String
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'assigned', 'picked_up', 'in_transit', 'delivered', 'cancelled'],
+        default: 'pending'
+    },
+    estimatedDeliveryTime: Date,
+    actualDeliveryTime: Date,
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
-const Counter = mongoose.model('Counter', counterSchema);
-
-// Order schema
-const orderSchema = new Schema({
-  orderID: {
-    type: String,
-    unique: true
-  },
-  driverId:{
-    type:String,
-    required:true
-  },
-  customerId: {
-    type: String,
-    required: true
-  },
-  shipmentDetails: {
-    type: String,
-    required: true
-  },
-  status: {
-    type: String,
-    default: 'Pending'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-});
-
-// Pre-save hook to auto-generate sequential orderID
-orderSchema.pre('save', async function (next) {
-  if (!this.orderID) {
-    const counter = await Counter.findByIdAndUpdate(
-      { _id: 'orderID' },       // counter document for orderID
-      { $inc: { seq: 1 } },     // increment sequence
-      { new: true, upsert: true } // create if doesn't exist
-    );
-
-    const seqNumber = counter.seq.toString().padStart(4, '0'); // e.g., 0001
-    this.orderID = `ORD-${seqNumber}`;
-  }
-  next();
-});
+// Index for geospatial queries
+orderSchema.index({ customerLocation: '2dsphere' });
 
 export default mongoose.model('Order', orderSchema);
