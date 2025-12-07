@@ -35,7 +35,7 @@ router.get('/GetAllCustomers', authenticateToken, async (req, res) => {
     try {
         const cached = await redisClient.get('customers');
         if (cached != null) {
-            console.log("Returning customers from redis");
+            console.log("Returning customers from redis ( Cache Hit)");
             return res.json(JSON.parse(cached));
         }
         const customer = await Customer.find();
