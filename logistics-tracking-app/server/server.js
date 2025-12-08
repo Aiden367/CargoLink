@@ -11,6 +11,7 @@ import orderRouter from "./routes/order.js"
 import customerRouter from "./routes/customer.js"
 import vehicleRouter from "./routes/vehicles.js"
 import productRouter from "./routes/product.js"
+import vendorRouter from "./routes/vendor.js"
 import { createClient } from 'redis';
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,8 +36,7 @@ app.use('/order',orderRouter)
 app.use('/customer',customerRouter)
 app.use('/vehicles',vehicleRouter)
 app.use('/product', productRouter)
-
-
+app.use('/vendor', vendorRouter)
 
 export const redisClient = createClient({ url: 'redis://localhost:6379' });
 
