@@ -10,6 +10,7 @@ import userRouter from "./routes/user.js"
 import orderRouter from "./routes/order.js"
 import customerRouter from "./routes/customer.js"
 import vehicleRouter from "./routes/vehicles.js"
+import productRouter from "./routes/product.js"
 import { createClient } from 'redis';
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,7 @@ app.use('/user',userRouter)
 app.use('/order',orderRouter)
 app.use('/customer',customerRouter)
 app.use('/vehicles',vehicleRouter)
+app.use('/product', productRouter)
 
 
 

@@ -3,7 +3,7 @@ import mongoose, { Schema } from 'mongoose';
 
 
 function generateVehicleId() {
-    return 'Vehicle-' + Math.floor(10000 + Math.random() * 90000); 
+    return 'VEHICLE' + Math.floor(10000 + Math.random() * 90000); 
 }
 
 const vehicleSchema = new mongoose.Schema({
