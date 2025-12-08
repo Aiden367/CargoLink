@@ -36,13 +36,12 @@ router.get('/GetProducts', async (req, res) => {
         if (listOfProducts.length == null) {
             return res.status(401).json({ message: "products list are empty" })
         }
-
         await redisClient.setEx(
                     'products',
                     DEFAULT_EXPERIRATION,
                     JSON.stringify(listOfProducts)
                 )
-        res.status(201).json({ messsage: "products recieved sucessfully" })
+        res.status(201).json({ messsage: "products recieved sucessfully",listOfProducts })
     } catch (err) {
         res.status(400).json({ message: "could not recieve all products", error: err.message })
     }

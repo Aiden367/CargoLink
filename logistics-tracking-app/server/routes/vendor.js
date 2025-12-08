@@ -24,6 +24,7 @@ router.post('/AddVendor', async (req, res) => {
             }
         })
         const newVendor = await vendor.save()
+        await redisClient.del("vendors");
         res.status(201).json({ messsage: "Vendor saved successfully", newVendor })
     } catch (err) {
         res.status(500).json({ message: "error saving vendor", error: err.message })

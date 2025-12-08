@@ -20,7 +20,7 @@ const DisplayVehicle = ({ vehicles }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {vehicles.map((vehicle) => (
+                        {vehicles.map((vehicle => (
                             <tr key={vehicle.vehicleId}>
                                 <td> {vehicle.VIN}</td>
                                 <td>{vehicle.name}</td>
@@ -29,7 +29,7 @@ const DisplayVehicle = ({ vehicles }) => {
                                 <td>{vehicle.Make}</td>
                                 <td>{vehicle.Model}</td>
                             </tr>
-                        ))}
+                        )))}
                     </tbody>
                 </table>
             </div>

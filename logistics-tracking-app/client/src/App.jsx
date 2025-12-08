@@ -8,6 +8,8 @@ import HomePage from './pages/Home'
 import OrderPage from './pages/Orders'
 import CustomerPage from './pages/Customer'
 import VehiclePage from './pages/Vehicles'
+import VendorPage from './pages/Vendor'
+import ProductPage from './pages/Product'
 function App() {
   return (
     <>
@@ -20,6 +22,8 @@ function App() {
           <Route path="/customer" element = {<CustomerPage/>}/>
           <Route path="/home" element = {<HomePage/>}/>
           <Route path="/vehicles" element = {<VehiclePage/>}/>
+          <Route path="/vendors" element = {<VendorPage/>}/>
+          <Route path="/products" element = {<ProductPage/>}/>
         </Routes>
       </Router>
     </>
