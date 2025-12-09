@@ -24,6 +24,7 @@ const Product = () => {
     return (
         <div>
             <Navbar />
+            <div>Hello</div>
             <AddProductForm />
             <ProductList products={productList} />
         </div>
