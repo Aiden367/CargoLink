@@ -2,6 +2,8 @@ import AddVehicleForm from '../components/layout/AddVehicleForm';
 import DisplayVehicles from '../components/layout/DisplayVehicles';
 import axios from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
+import Navbar from '../components/layout/navbar.jsx';
+import '../styles/VehiclesPage.css';
 const Vehicles = () => {
 
     const [listOfVehicles, setListOfVehicles] = useState([])
@@ -18,7 +20,12 @@ const Vehicles = () => {
         retrieveVehicles();
     }, []);
     return (
-        <div>
+        <div className= "vehicles-container">
+            <Navbar/>
+            <div className ="vehicle-heading">
+                <h1>Vendors</h1>
+                <button >Add Vendors</button>
+            </div>
             <AddVehicleForm />
             <DisplayVehicles vehicles={listOfVehicles} />
         </div>

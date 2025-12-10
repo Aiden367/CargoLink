@@ -1,0 +1,14 @@
+.vehicle-heading{
+ background: white;
+ display:flex;
+ gap:860px;
+ width: 100%;
+}
+
+.vehicles-container {
+    margin-bottom: 1px;
+    width: 100vw;                /* full viewport width */
+    margin-left: calc(50% - 50vw);  /* break out of centered parent */
+    margin-right: calc(50% - 50vw);
+    background-color: blue;
+}
