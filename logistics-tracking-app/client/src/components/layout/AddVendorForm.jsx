@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '../common/Input'
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
-
+import '../../styles/AddVendorForm.css';
 
 const AddVendor = () => {
     const [shopName, setShopName] = useState('');
@@ -20,39 +20,51 @@ const AddVendor = () => {
             console.log("Vendor sucessfully added", response.data)
         } catch (err) {
             console.log("Error saving vendor data")
-            console.err(err);
+            console.error(err);
         }
     }
 
     return (
-        <div>
-            <div>
-                <form onSubmit={handleSubmit}>
-                    <Input
-                        label="shopName"
+        <form className="add-vendor-input-form" onSubmit={handleSubmit}>
+            <div className="inputs-grid">
+                <div className="input-group">
+                    <label htmlFor="shopName">Shop Name</label>
+                    <input className="add-vendor-input"
+                        id="shopName"
                         type="text"
                         value={shopName}
                         onChange={(e) => setShopName(e.target.value)}
                         placeholder="Shop Name"
                     />
-                    <Input
-                        label="latitude"
+                </div>
+
+                <div className="input-group">
+                    <label htmlFor="latitude">Latitude</label>
+                    <input className="add-vendor-input"
+                        id="latitude"
                         type="number"
+                        step="any"
                         value={latitude}
                         onChange={(e) => setLatitude(e.target.value)}
                         placeholder="Latitude"
                     />
-                    <Input
-                        label="longitude"
+                </div>
+
+                <div className="input-group">
+                    <label htmlFor="longitude">Longitude</label>
+                    <input className="add-vendor-input"
+                        id="longitude"
                         type="number"
+                        step="any"
                         value={longitude}
                         onChange={(e) => setLongitude(e.target.value)}
                         placeholder="Longitude"
                     />
-                 <button type= "submit">Create Vendor</button>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <button type="submit">Create Vendor</button>
+        </form>
     )
 }
 

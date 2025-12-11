@@ -1,0 +1,34 @@
+.vendor-container {
+  max-width: 2000px; 
+  margin: 0 auto;    
+  padding: 0 1rem;
+  
+}
+
+.vendor-heading {
+  background: white;
+  display: flex;
+  justify-content: space-between;  /* Better than gap:860px */
+  align-items: center;
+  padding: 1rem 0;
+  width: 100%;
+}
+
+.vendor-heading-name{
+    font-size: 25px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.add-vendor-button{
+     background-color: #2563EB;
+     color:white;
+     border-radius:8px;
+}
+
+.add-vendor-button:hover{
+    background-color: #1D4ED8;
+}
+
+.btn-primary:active {
+    background-color: #1E40AF;
+}

@@ -29,7 +29,7 @@ router.post("/AddProduct", async (req, res) => {
 
 router.get('/GetProducts', async (req, res) => {
     try {
-        const cached = await redisClient.get('vehicles')
+        const cached = await redisClient.get('products')
         if(cached != null){
             return res.json(JSON.parse(cached));
         }

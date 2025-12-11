@@ -6,7 +6,7 @@ import VendorList from '../components/layout/DisplayVendors'
 import AddVendorForm from '../components/layout/AddVendorForm';
 import Navbar from '../components/layout/navbar.jsx';
 import SearchForVendors from '../components/layout/SearchForVendors';
-
+import '../styles/VendorPage.css';
 const Vendor = () => {
     const [listOfVendors, setListOfVendors] = useState([])
     const [listOfSearchedVendor, setListOfSearchedVendor] = useState([])
@@ -35,6 +35,9 @@ const Vendor = () => {
         console.log("Vendor found:", response.data);
     }
 
+    const navigateToAddVendor = async (e) => {
+        navigate('/addvendor')
+    }
     // Watch for empty search input and reset
     useEffect(() => {
         if (searchedVendorId.trim() === '') {
@@ -49,29 +52,31 @@ const Vendor = () => {
     return (
         <>
             <Navbar />
-            <div>
-                <div>
-                    <div className="search-for-vehicle">
-                        <form onSubmit={handleSearchForVendor}>
-                            <input
-                                type="text"
-                                value={searchedVendorId}
-                                onChange={(e) => setSearchedVendorId(e.target.value)}
-                                placeholder="Search by Vendor ID"
-                            />
-                        </form>
-                        {isSearching ? (
-                            <div className="table-container">
-                                <SearchForVendors vendors={listOfSearchedVendor} />
-                            </div>
-                        ) : (
-                            <div className="table-container">
-                                <VendorList vendors={listOfVendors} />
-                            </div>
-                        )}
-                    </div>
+            <div className="vendor-container">
+                <div className="vendor-heading">
+                    <h1 className="vendor-heading-name">Products</h1>
+                    <button onClick={navigateToAddVendor} className="add-vendor-button">Add Vendor</button>
                 </div>
 
+                <div className="search-for-vendor">
+                    <form onSubmit={handleSearchForVendor}>
+                        <input
+                            type="text"
+                            value={searchedVendorId}
+                            onChange={(e) => setSearchedVendorId(e.target.value)}
+                            placeholder="Search by Vendor ID"
+                        />
+                    </form>
+                    {isSearching ? (
+                        <div className="table-container">
+                            <SearchForVendors vendors={listOfSearchedVendor} />
+                        </div>
+                    ) : (
+                        <div className="table-container">
+                            <VendorList vendors={listOfVendors} />
+                        </div>
+                    )}
+                </div>
             </div>
         </>
     )

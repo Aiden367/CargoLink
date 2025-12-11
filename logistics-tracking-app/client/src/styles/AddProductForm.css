@@ -1,4 +1,4 @@
-.add-vehicle-input-form {
+.add-product-input-form {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -13,7 +13,7 @@
   overflow: hidden;
 }
 
-.add-vehicle-input-form::before {
+.add-product-input-form::before {
   content: '';
   position: absolute;
   top: 0;
@@ -58,7 +58,7 @@
   font-weight: bold;
 }
 
-.input-group .add-vehicle-input {
+.input-group .add-product-input {
   padding: 16px 18px;
   border-radius: 10px;
   border: 2px solid #cbd5e1;
@@ -71,12 +71,12 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.input-group .add-vehicle-input:hover {
+.input-group .add-product-input:hover {
   border-color: #94a3b8;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
-.input-group .add-vehicle-input:focus {
+.input-group .add-product-input:focus {
   outline: none;
   border-color: #2563EB;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15), 0 4px 12px rgba(37, 99, 235, 0.2);
@@ -84,12 +84,12 @@
   transform: translateY(-1px);
 }
 
-.input-group .add-vehicle-input::placeholder {
+.input-group .add-product-input::placeholder {
   color: #94a3b8;
   font-style: italic;
 }
 
-.add-vehicle-input-form button {
+.add-product-input-form button {
   height: 56px;
   padding: 0 40px;
   background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 50%, #1e40af 100%);
@@ -110,7 +110,7 @@
   overflow: hidden;
 }
 
-.add-vehicle-input-form button::before {
+.add-product-input-form button::before {
   content: '';
   position: absolute;
   top: 0;
@@ -121,24 +121,24 @@
   transition: left 0.5s ease;
 }
 
-.add-vehicle-input-form button:hover {
+.add-product-input-form button:hover {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 50%, #1e3a8a 100%);
   transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(37, 99, 235, 0.5), 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.add-vehicle-input-form button:hover::before {
+.add-product-input-form button:hover::before {
   left: 100%;
 }
 
-.add-vehicle-input-form button:active {
+.add-product-input-form button:active {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .add-vehicle-input-form {
+  .add-product-input-form {
     padding: 40px 28px;
     max-width: 100%;
   }
@@ -149,15 +149,15 @@
 }
 
 @media (max-width: 480px) {
-  .add-vehicle-input-form {
+  .add-product-input-form {
     padding: 32px 20px;
   }
   
-  .input-group .add-vehicle-input {
+  .input-group .add-product-input {
     padding: 14px 16px;
   }
   
-  .add-vehicle-input-form button {
+  .add-product-input-form button {
     height: 52px;
     font-size: 15px;
   }

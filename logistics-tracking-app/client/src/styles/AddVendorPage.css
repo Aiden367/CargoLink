@@ -1,4 +1,4 @@
-.add-vehicles-heading-form {
+.add-vendor-heading-form {
   max-width: 1200px;
   margin: 40px auto 20px;
   padding: 0 20px;
@@ -7,7 +7,7 @@
   gap: 24px;
 }
 
-.add-vehicles-heading-form button {
+.add-vendor-heading-form button {
   padding: 12px 24px;
   background: linear-gradient(135deg, #64748b 0%, #475569 100%);
   color: white;
@@ -26,14 +26,14 @@
   overflow: hidden;
 }
 
-.add-vehicles-heading-form button::before {
+.add-vendor-heading-form button::before {
   content: '←';
   font-size: 16px;
   font-weight: bold;
   transition: transform 0.3s ease;
 }
 
-.add-vehicles-heading-form button::after {
+.add-vendor-heading-form button::after {
   content: '';
   position: absolute;
   top: 0;
@@ -44,26 +44,26 @@
   transition: left 0.5s ease;
 }
 
-.add-vehicles-heading-form button:hover {
+.add-vendor-heading-form button:hover {
   background: linear-gradient(135deg, #475569 0%, #334155 100%);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(100, 116, 139, 0.4);
 }
 
-.add-vehicles-heading-form button:hover::before {
+.add-vendor-heading-form button:hover::before {
   transform: translateX(-3px);
 }
 
-.add-vehicles-heading-form button:hover::after {
+.add-vendor-heading-form button:hover::after {
   left: 100%;
 }
 
-.add-vehicles-heading-form button:active {
+.add-vendor-heading-form button:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(100, 116, 139, 0.3);
 }
 
-.new-vehicle-text-heading {
+.new-vendor-text-heading {
   font-size: 36px;
   font-weight: 800;
   background: linear-gradient(135deg, #0c4a6e 0%, #2563EB 50%, #06b6d4 100%);
@@ -77,7 +77,7 @@
   display: inline-block;
 }
 
-.new-vehicle-text-heading::after {
+.new-vendor-text-heading::after {
   content: '';
   position: absolute;
   bottom: -8px;
@@ -88,7 +88,7 @@
   border-radius: 2px;
 }
 
-.add-vehicle-form {
+.add-vendor-form {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
@@ -100,33 +100,33 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .add-vehicles-heading-form {
+  .add-vendor-heading-form {
     margin: 24px auto 16px;
     flex-direction: column;
     align-items: flex-start;
     gap: 20px;
   }
 
-  .new-vehicle-text-heading {
+  .new-vendor-text-heading {
     font-size: 30px;
   }
 
-  .add-vehicle-form {
+  .add-vendor-form {
     padding: 0 16px 32px;
   }
   
-  .add-vehicles-heading-form button {
+  .add-vendor-heading-form button {
     padding: 11px 22px;
   }
 }
 
 @media (max-width: 480px) {
-  .new-vehicle-text-heading {
+  .new-vendor-text-heading {
     font-size: 26px;
     letter-spacing: -0.5px;
   }
 
-  .add-vehicles-heading-form button {
+  .add-vendor-heading-form button {
     width: 100%;
     justify-content: center;
   }

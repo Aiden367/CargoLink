@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import { Input } from '../common/Input'
+import '../../styles/AddProductForm.css';
 const AddProduct = () => {
     const [productName, setProductName] = useState('')
     const [productAmount, setProductAmount] = useState('')
@@ -23,35 +24,46 @@ const AddProduct = () => {
         }
 
     }
-    return (
-        <div>
-            <div>
-                <form onSubmit={handleSubmit}>
-                    <Input
-                        label="productName"
+     return (
+        <form className="add-product-input-form" onSubmit={handleSubmit}>
+            <div className="inputs-grid">
+                <div className="input-group">
+                    <label htmlFor="productName">Product Name</label>
+                    <input className="add-product-input"
+                        id="productName"
                         type="text"
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
                         placeholder="Product Name"
                     />
-                    <Input
-                        label="productAmount"
+                </div>
+
+                <div className="input-group">
+                    <label htmlFor="productAmount">Product Amount</label>
+                    <input className="add-product-input"
+                        id="productAmount"
                         type="text"
-                        value={productName}
+                        step="any"
+                        value={productAmount}
                         onChange={(e) => setProductAmount(e.target.value)}
                         placeholder="Product Amount"
                     />
-                    <Input
-                        label="productCost"
+                </div>
+
+                <div className="input-group">
+                    <label htmlFor="productCost">Product Cost</label>
+                    <input className="add-product-input"
+                        id="productCost"
                         type="text"
+                        step="any"
                         value={productCost}
                         onChange={(e) => setProductCost(e.target.value)}
-                        placeholder="Product Cost"
+                        placeholder="Longitude"
                     />
-                    <button type="submit">Add Product</button>
-                </form>
+                </div>
             </div>
-        </div>
+            <button type="submit">Add Product</button>
+        </form>
     )
 }
 
