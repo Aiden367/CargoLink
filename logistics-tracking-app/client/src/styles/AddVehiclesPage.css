@@ -1,0 +1,14 @@
+.add-vehicle-form {
+    width: 50%;
+    background-color: gray;
+    border-radius: 4px;
+    margin: 0 auto;  /* centers horizontally */
+    display: flex;
+    align-items: center;
+    padding: 20px;
+    height:50%;
+}
+
+.new-vehicle-text-heading{
+    font-size: 20px;
+}

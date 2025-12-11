@@ -5,12 +5,14 @@ import axios from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/layout/navbar.jsx';
 import '../styles/VehiclesPage.css';
+import { useNavigate } from "react-router-dom";
 const Vehicles = () => {
 
     const [listOfVehicles, setListOfVehicles] = useState([])
     const [listOfSearchedVehicle, setListOfSearchedVehicle] = useState([])
     const [searchedVehicleId, setSearchedVehicleId] = useState('')
     const [isSearching, setIsSearching] = useState(false)
+    const navigate = useNavigate();
     const retrieveVehicles = async (e) => {
         try {
             const response = await axios.get('http://localhost:5000/vehicles/GetAllVehicles')
@@ -32,6 +34,10 @@ const Vehicles = () => {
         }
     }
 
+    const navigateToAddVehicle = async (e) => {
+        navigate('/addvehicles')
+    }
+
     // Watch for empty search input and reset
     useEffect(() => {
         if (searchedVehicleId.trim() === '') {
@@ -49,7 +55,7 @@ const Vehicles = () => {
             <div className="vehicles-container">
                 <div className="vehicle-heading">
                     <h1 className="vehicle-heading-name">Vehicles</h1>
-                    <button className="add-vehicle-button">Add Vehicles</button>
+                    <button onClick={navigateToAddVehicle} className="add-vehicle-button">Add Vehicles</button>
                 </div>
 
                 <div className="search-for-vehicle">
@@ -67,7 +73,7 @@ const Vehicles = () => {
                         </div>
                     ) : (
                         <div className="table-container">
-                            <SearchForVehicles vehicles={listOfVehicles} />
+                            <DisplayVehicles vehicles={listOfVehicles} />
                         </div>
                     )}
                 </div>

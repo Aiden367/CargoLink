@@ -5,7 +5,7 @@ import { getCustomer } from '../middleware/recieveCustomer.js'
 import { createClient } from 'redis';
 import { redisClient } from '../server.js';
 import Vendor from '../models/vendor.js'
-
+import { getVendor } from '../middleware/receiveVendor.js'
 
 const router = new Router()
 const DEFAULT_EXPERIRATION = 3600
@@ -50,5 +50,18 @@ router.get('/GetVendors', async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: "error trying to retrieve vendors", error: err.message })
     }
+})
+
+
+router.get('/FindVendor/:vendorId',getVendor,async (req,res) =>{
+    try{
+      if(req.vendor == null){
+        return res.status(401).json({message: "vendor could not be found"})
+      }
+      res.json(req.vendor)
+    }catch(err){
+        res.status(500).json({message:"Could not grab vendor", error: err.message})
+    }
+    
 })
 export default router;

@@ -3,6 +3,7 @@ import Customer from '../models/customer.js'
 import { authenticateToken } from '../middleware/auth.js'
 import { getCustomer } from '../middleware/recieveCustomer.js'
 import { redisClient } from '../server.js';
+import { getProduct } from '../middleware/recieveProduct.js'
 import Product from '../models/product.js'
 const router = Router();
 const DEFAULT_EXPERIRATION = 3600
@@ -47,4 +48,7 @@ router.get('/GetProducts', async (req, res) => {
     }
 })
 
+router.get('/FindProduct/:productId',getProduct,async(req,res) =>{
+    res.json(req.product);
+})
 export default router;

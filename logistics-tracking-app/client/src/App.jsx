@@ -10,6 +10,7 @@ import CustomerPage from './pages/Customer'
 import VehiclePage from './pages/Vehicles'
 import VendorPage from './pages/Vendor'
 import ProductPage from './pages/Product'
+import AddVehiclesPage from './pages/AddVehiclePage'
 function App() {
   return (
     <>
@@ -24,6 +25,7 @@ function App() {
           <Route path="/vehicles" element = {<VehiclePage/>}/>
           <Route path="/vendors" element = {<VendorPage/>}/>
           <Route path="/products" element = {<ProductPage/>}/>
+          <Route path="/addvehicles" element = {<AddVehiclesPage/>}/>
         </Routes>
       </Router>
     </>

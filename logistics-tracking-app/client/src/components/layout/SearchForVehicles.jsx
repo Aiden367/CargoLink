@@ -1,10 +1,7 @@
 import '../../styles/SearchForVehicle.css';
-
-
 const SearchForVehicles = ({ vehicles }) => {
     // Safety check: ensure vehicles is always an array
     const vehicleList = Array.isArray(vehicles) ? vehicles : [];
-
     return (
         <div>
            <table>

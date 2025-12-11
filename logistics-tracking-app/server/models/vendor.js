@@ -2,19 +2,17 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 // Counter schema for auto-increment vendor ID
-const counterSchema = new Schema({
-  _id: String,
-  seq: { type: Number, default: 0 }
-});
-
-const Counter = mongoose.models.Counter || mongoose.model("Counter", counterSchema);
-
+function generateVendorId() {
+    return 'VENDOR' + Math.floor(10000 + Math.random() * 90000); 
+}
 // Vendor schema
 const vendorSchema = new Schema({
-  vendorID: {
-    type: String,
-    unique: true
-  },
+   vendorId : {
+        type: String,
+        required: true,
+        unique : true,
+        default: generateVendorId
+    },
   shopName: {
     type: String,
     required: true
@@ -33,21 +31,6 @@ const vendorSchema = new Schema({
 });
 
 
-vendorSchema.pre("save", async function (next) {
-  if (!this.vendorID) {
-    const counter = await Counter.findByIdAndUpdate(
-      { _id: "vendorID" },
-      { $inc: { seq: 1 } },
-      { new: true, upsert: true }
-    );
-
-    const seqNumber = counter.seq.toString().padStart(4, "0");
-    this.vendorID = `VEN-${seqNumber}`;
-  }
-  next();
-});
-
-// Export Vendor model
 const Vendor = mongoose.models.Vendor || mongoose.model("Vendor", vendorSchema);
 
 export default Vendor;
