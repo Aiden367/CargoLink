@@ -26,8 +26,8 @@ const DisplayVehicle = ({ vehicles }) => {
                                 <td>{vehicle.name}</td>
                                 <td>{vehicle.type}</td>
                                 <td>{vehicle.year}</td>
-                                <td>{vehicle.Make}</td>
-                                <td>{vehicle.Model}</td>
+                                <td>{vehicle.make}</td>
+                                <td>{vehicle.model}</td>
                             </tr>
                         )))}
                     </tbody>

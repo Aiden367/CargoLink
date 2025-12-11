@@ -1,0 +1,104 @@
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+/* Table Header */
+thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+thead th {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+/* Table Body */
+tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.15s ease;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+  box-shadow: inset 4px 0 0 #2563eb;
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody td {
+  padding: 1rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* VIN Column - Monospace for better readability */
+tbody td:first-child {
+  font-family: 'Courier New', monospace;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Status badges (if you add status column later) */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Empty State */
+tbody tr td[colspan] {
+  text-align: center;
+  color: #94a3b8;
+  padding: 3rem;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .search-for-vehicle {
+    padding: 1rem;
+  }
+  
+  table {
+    font-size: 0.75rem;
+  }
+  
+  thead th,
+  tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  thead th {
+    font-size: 0.625rem;
+  }
+}
+
+/* Loading State (optional) */
+.table-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}

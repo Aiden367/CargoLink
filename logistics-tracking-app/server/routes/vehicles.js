@@ -53,12 +53,18 @@ router.get('/GetAllVehicles', async (req,res) =>{
     }
 })
 
-router.patch('/EditVehicle/:id', getVehicle,async (req,res) =>{
+router.patch('/EditVehicle/:vehicleId', getVehicle,async (req,res) =>{
     const recievedVehicle = req.Vehicle
 
     recievedVehicle.VIN = req.body.VIN;
     await recievedVehicle.save();
     res.json(recievedVehicle)
-}
-)
+})
+
+
+router.get('/SearchForVehicle/:vehicleId', getVehicle, async (req, res) => {
+    res.json(req.vehicle);
+});
+
+
 export default router;

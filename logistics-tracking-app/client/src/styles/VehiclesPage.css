@@ -1,14 +1,114 @@
-.vehicle-heading{
- background: white;
- display:flex;
- gap:860px;
- width: 100%;
-}
 
 .vehicles-container {
-    margin-bottom: 1px;
-    width: 100vw;                /* full viewport width */
-    margin-left: calc(50% - 50vw);  /* break out of centered parent */
-    margin-right: calc(50% - 50vw);
-    background-color: blue;
+  max-width: 2000px; 
+  margin: 0 auto;    
+  padding: 0 1rem;
+  
+}
+
+.vehicle-heading {
+  background: white;
+  display: flex;
+  justify-content: space-between;  /* Better than gap:860px */
+  align-items: center;
+  padding: 1rem 0;
+  width: 100%;
+}
+
+.vehicle-heading-name{
+    font-size: 25px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.add-vehicle-button{
+     background-color: #2563EB;
+     color:white;
+     border-radius:8px;
+}
+
+.add-vehicle-button:hover{
+    background-color: #1D4ED8;
+}
+
+.btn-primary:active {
+    background-color: #1E40AF;
+}
+
+
+/* Input Styles */
+input[type="text"],
+input[type="number"] {
+  width: 20%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #0f172a;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+input::placeholder {
+  color: #94a3b8;
+}
+
+
+input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background-color: #ffffff;
+}
+
+
+input:hover:not(:focus) {
+  border-color: #94a3b8;
+}
+
+
+input:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Error State (add class="error" when needed) */
+input.error {
+  border-color: #dc2626;
+}
+
+input.error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Success State (add class="success" when needed) */
+input.success {
+  border-color: #16a34a;
+}
+
+input.success:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+/* Input with Icon (if you add search icon later) */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-with-icon {
+  padding-left: 2.5rem;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
 }

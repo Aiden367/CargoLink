@@ -1,5 +1,6 @@
 import AddVehicleForm from '../components/layout/AddVehicleForm';
 import DisplayVehicles from '../components/layout/DisplayVehicles';
+import SearchForVehicles from '../components/layout/SearchForVehicles';
 import axios from 'axios';
 import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/layout/navbar.jsx';
@@ -7,7 +8,9 @@ import '../styles/VehiclesPage.css';
 const Vehicles = () => {
 
     const [listOfVehicles, setListOfVehicles] = useState([])
-
+    const [listOfSearchedVehicle, setListOfSearchedVehicle] = useState([])
+    const [searchedVehicleId, setSearchedVehicleId] = useState('')
+    const [isSearching, setIsSearching] = useState(false)
     const retrieveVehicles = async (e) => {
         try {
             const response = await axios.get('http://localhost:5000/vehicles/GetAllVehicles')
@@ -16,19 +19,60 @@ const Vehicles = () => {
             console.err(err);
         }
     }
+    const handleSearchingForVehicle = async (e) => {
+        try {
+            e.preventDefault();
+            const response = await axios.get(`http://localhost:5000/vehicles/SearchForVehicle/${searchedVehicleId}`)
+            setListOfSearchedVehicle([response.data]);
+            setIsSearching(true);
+            console.log("Vehicle found:", response.data);
+        } catch (err) {
+            console.log("error searching for vehicle", err)
+            setListOfSearchedVehicle([]); // Clear on error
+        }
+    }
+
+    // Watch for empty search input and reset
+    useEffect(() => {
+        if (searchedVehicleId.trim() === '') {
+            setIsSearching(false);
+            setListOfSearchedVehicle([]);
+        }
+    }, [searchedVehicleId]);
+
     useEffect(() => {
         retrieveVehicles();
     }, []);
     return (
-        <div className= "vehicles-container">
-            <Navbar/>
-            <div className ="vehicle-heading">
-                <h1>Vendors</h1>
-                <button >Add Vendors</button>
+        <>
+            <Navbar />
+            <div className="vehicles-container">
+                <div className="vehicle-heading">
+                    <h1 className="vehicle-heading-name">Vehicles</h1>
+                    <button className="add-vehicle-button">Add Vehicles</button>
+                </div>
+
+                <div className="search-for-vehicle">
+                    <form onSubmit={handleSearchingForVehicle}>
+                        <input
+                            type="text"
+                            value={searchedVehicleId}
+                            onChange={(e) => setSearchedVehicleId(e.target.value)}
+                            placeholder="Search by Vehicle ID"
+                        />
+                    </form>
+                    {isSearching ? (
+                        <div className="table-container">
+                            <SearchForVehicles vehicles={listOfSearchedVehicle} />
+                        </div>
+                    ) : (
+                        <div className="table-container">
+                            <SearchForVehicles vehicles={listOfVehicles} />
+                        </div>
+                    )}
+                </div>
             </div>
-            <AddVehicleForm />
-            <DisplayVehicles vehicles={listOfVehicles} />
-        </div>
+        </>
     )
 }
 
