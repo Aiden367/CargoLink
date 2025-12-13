@@ -67,12 +67,12 @@ const Home = () => {
         vendorsRes,
         vehiclesRes
       ] = await Promise.all([
-        axios.get('http://localhost:3000/api/orders/GetActiveDeliveries', config).catch(e => ({ data: [] })),
-        axios.get('http://localhost:3000/api/orders/GetAllOrders', config).catch(e => ({ data: [] })),
-        axios.get('http://localhost:3000/api/drivers/GetDriverLocations', config).catch(e => ({ data: [] })),
-        axios.get('http://localhost:3000/api/products/GetProducts', config).catch(e => ({ data: { listOfProducts: [] } })),
-        axios.get('http://localhost:3000/api/vendors/GetVendors', config).catch(e => ({ data: { listOfVendors: [] } })),
-        axios.get('http://localhost:3000/api/vehicles/GetAllVehicles', config).catch(e => ({ data: [] }))
+        axios.get('http://localhost:5000/order/GetActiveDeliveries', config).catch(e => ({ data: [] })),
+        axios.get('http://localhost:5000/order/GetAllOrders', config).catch(e => ({ data: [] })),
+        axios.get('http://localhost:5000/drivers/GetDriverLocations', config).catch(e => ({ data: [] })),
+        axios.get('http://localhost:5000/product/GetProducts', config).catch(e => ({ data: { listOfProducts: [] } })),
+        axios.get('http://localhost:5000/vendor/GetVendors', config).catch(e => ({ data: { listOfVendors: [] } })),
+        axios.get('http://localhost:5000/vehicles/GetAllVehicles', config).catch(e => ({ data: [] }))
       ]);
 
       const deliveries = Array.isArray(activeDeliveriesRes.data) ? activeDeliveriesRes.data : [];
@@ -215,7 +215,7 @@ const Home = () => {
   const handleAssignDriver = async (orderId) => {
     try {
       const config = getAuthHeaders();
-      await axios.post('http://localhost:3000/api/orders/CreateOrder', {
+      await axios.post('http://localhost:3000/order/CreateOrder', {
         orderId
       }, config);
       

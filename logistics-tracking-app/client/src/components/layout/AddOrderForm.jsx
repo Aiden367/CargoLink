@@ -1,468 +1,435 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+// OrderDeliverySystem.jsx - COMPLETE VERSION
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
-import { Package, Truck, MapPin, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Package, Truck, MapPin, CheckCircle, UserPlus } from "lucide-react";
 import L from 'leaflet';
+import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
-import '../../styles/OrderDeliverySystem.css';
-const WAREHOUSE = { lat: -33.92, lng: 18.42 };
 
-const createIcon = (color, emoji) => {
-  return L.icon({
-    iconUrl: `data:image/svg+xml,${encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-        <circle cx="20" cy="20" r="18" fill="${color}" stroke="white" stroke-width="3"/>
-        <text x="20" y="26" font-size="18" text-anchor="middle">${emoji}</text>
-      </svg>
-    `)}`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40]
-  });
-};
+const WAREHOUSE = { lat: -33.92, lng: 18.42 };
+const API_BASE_URL = 'http://localhost:5000';
+
+axios.defaults.baseURL = API_BASE_URL;
+const token = localStorage.getItem('token') || '';
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
+const createIcon = (color, emoji) => L.icon({
+  iconUrl: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="18" fill="${color}" stroke="white" stroke-width="3"/><text x="20" y="26" font-size="18" text-anchor="middle">${emoji}</text></svg>`)}`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
 
 const warehouseIcon = createIcon("#10b981", "🏭");
 const customerIcon = createIcon("#ef4444", "📍");
 const driverIcon = createIcon("#3b82f6", "🚗");
 
-
 export default function OrderDeliverySystem() {
-  const [view, setView] = useState("create"); // create, orders, tracking
+  const [view, setView] = useState("create");
   const [customers, setCustomers] = useState([]);
-  const [drivers, setDrivers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [driverLocation, setDriverLocation] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Form states
   const [newCustomer, setNewCustomer] = useState({
-    shopName: "",
-    address: "",
-    lat: -33.95,
-    lng: 18.45
+    shopName: "", address: "", latitude: -33.95, longitude: 18.45
+  });
+
+  const [newDriver, setNewDriver] = useState({
+    name: "", phoneNumber: "", VehicleId: ""
   });
 
   const [newOrder, setNewOrder] = useState({
-    customerId: "",
-    items: "",
-    notes: ""
+    customerId: "", items: "", notes: ""
   });
 
-  // Initialize sample data
+  const [manualAssign, setManualAssign] = useState({
+    orderId: "", driverId: ""
+  });
+
   useEffect(() => {
-    initializeSampleData();
-  }, []);
-
-  const initializeSampleData = () => {
-    // Sample customers
-    const sampleCustomers = [
-      { id: "C1", shopName: "Joe's Coffee", lat: -33.95, lng: 18.45, address: "123 Main St" },
-      { id: "C2", shopName: "Tech Store", lat: -33.89, lng: 18.38, address: "456 Oak Ave" },
-      { id: "C3", shopName: "Bakery Plus", lat: -33.93, lng: 18.50, address: "789 Pine Rd" },
-    ];
-    setCustomers(sampleCustomers);
-
-    // Sample drivers
-    const sampleDrivers = [
-      { id: "DRIVER-10001", name: "John Smith", lat: WAREHOUSE.lat, lng: WAREHOUSE.lng, status: "available" },
-      { id: "DRIVER-10002", name: "Sarah Jones", lat: -33.91, lng: 18.43, status: "available" },
-    ];
-    setDrivers(sampleDrivers);
-  };
-
-  // Add new customer
-  const handleAddCustomer = () => {
-    const customer = {
-      id: `C${customers.length + 1}`,
-      shopName: newCustomer.shopName,
-      address: newCustomer.address,
-      lat: newCustomer.lat,
-      lng: newCustomer.lng
-    };
-    setCustomers([...customers, customer]);
-    setNewCustomer({ shopName: "", address: "", lat: -33.95, lng: 18.45 });
-    alert(`Customer "${customer.shopName}" added!`);
-  };
-
-  // Create order and assign driver
-  const handleCreateOrder = () => {
-    if (!newOrder.customerId) {
-      alert("Please select a customer");
-      return;
-    }
-
-    const customer = customers.find(c => c.id === newOrder.customerId);
-    const availableDriver = drivers.find(d => d.status === "available");
-
-    if (!availableDriver) {
-      alert("No available drivers at the moment");
-      return;
-    }
-
-    const order = {
-      id: `ORDER-${Date.now()}`,
-      customerId: customer.id,
-      customerName: customer.shopName,
-      customerLocation: { lat: customer.lat, lng: customer.lng },
-      driverId: availableDriver.id,
-      driverName: availableDriver.name,
-      items: newOrder.items.split(",").map(i => i.trim()),
-      notes: newOrder.notes,
-      status: "assigned",
-      createdAt: new Date(),
-      estimatedArrival: new Date(Date.now() + 30 * 60 * 1000) // 30 min
-    };
-
-    setOrders([...orders, order]);
-
-    // Update driver status
-    setDrivers(drivers.map(d =>
-      d.id === availableDriver.id
-        ? { ...d, status: "busy", currentOrder: order.id }
-        : d
-    ));
-
-    // Start simulating driver movement
-    simulateDelivery(order.id, availableDriver.id, customer.lat, customer.lng);
-
-    setNewOrder({ customerId: "", items: "", notes: "" });
-    setView("orders");
-    alert(`Order created and assigned to ${availableDriver.name}!`);
-  };
-
-  // Simulate driver moving to customer
-  const simulateDelivery = (orderId, driverId, targetLat, targetLng) => {
-    const steps = 60;
-    let currentStep = 0;
+    fetchCustomers();
+    fetchOrders();
+    fetchDrivers();
+    fetchVehicles();
 
     const interval = setInterval(() => {
-      if (currentStep >= steps) {
-        clearInterval(interval);
-        // Mark as delivered
-        setOrders(prev => prev.map(o =>
-          o.id === orderId
-            ? { ...o, status: "delivered", actualDeliveryTime: new Date() }
-            : o
-        ));
-        setDrivers(prev => prev.map(d =>
-          d.id === driverId
-            ? { ...d, status: "available", currentOrder: null, lat: WAREHOUSE.lat, lng: WAREHOUSE.lng }
-            : d
-        ));
-        return;
-      }
+      fetchOrders();
+      fetchDrivers();
+    }, 5000);
 
-      const progress = currentStep / steps;
+    return () => clearInterval(interval);
+  }, []);
 
-      // Move to customer (first half)
-      if (currentStep < steps / 2) {
-        const p = (currentStep / (steps / 2));
-        const lat = WAREHOUSE.lat + (targetLat - WAREHOUSE.lat) * p;
-        const lng = WAREHOUSE.lng + (targetLng - WAREHOUSE.lng) * p;
-
-        setDrivers(prev => prev.map(d =>
-          d.id === driverId ? { ...d, lat, lng } : d
-        ));
-
-        setOrders(prev => prev.map(o =>
-          o.id === orderId ? { ...o, status: "in_transit" } : o
-        ));
-      }
-      // Return to warehouse (second half)
-      else {
-        const p = ((currentStep - steps / 2) / (steps / 2));
-        const lat = targetLat + (WAREHOUSE.lat - targetLat) * p;
-        const lng = targetLng + (WAREHOUSE.lng - targetLng) * p;
-
-        setDrivers(prev => prev.map(d =>
-          d.id === driverId ? { ...d, lat, lng } : d
-        ));
-      }
-
-      currentStep++;
-    }, 200);
-  };
-
-  // Track specific order
-  const trackOrder = (order) => {
-    setSelectedOrder(order);
-    const driver = drivers.find(d => d.id === order.driverId);
-    if (driver) {
-      setDriverLocation({ lat: driver.lat, lng: driver.lng });
+  const fetchCustomers = async () => {
+    try {
+      const { data } = await axios.get('/customer/GetAllCustomers');
+      setCustomers(data.map(c => ({
+        id: c._id,
+        shopName: c.shopName,
+        address: c.address,
+        lat: c.location.coordinates[1],
+        lng: c.location.coordinates[0]
+      })));
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      if (err.response?.status === 401) setCustomers([]);
     }
-    setView("tracking");
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: "bg-yellow-500",
-      assigned: "bg-blue-500",
-      in_transit: "bg-purple-500",
-      delivered: "bg-green-500",
-      cancelled: "bg-red-500"
-    };
-    return colors[status] || "bg-gray-500";
+  const fetchOrders = async () => {
+    try {
+      const { data } = await axios.get('/order/GetAllOrders');
+      setOrders(data.map(o => ({
+        id: o._id,
+        orderId: o.orderId,
+        customerId: o.customerId?._id,
+        customerName: o.customerId?.shopName || 'Unknown',
+        customerLocation: {
+          lat: o.customerLocation?.coordinates[1] || 0,
+          lng: o.customerLocation?.coordinates[0] || 0
+        },
+        driverId: o.driverId || null,
+        items: o.shipmentDetails?.items || [],
+        notes: o.shipmentDetails?.notes || '',
+        status: o.status,
+        createdAt: new Date(o.createdAt),
+        actualDeliveryTime: o.actualDeliveryTime ? new Date(o.actualDeliveryTime) : null,
+        driverLocation: o.driverLocation
+      })));
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      if (err.response?.status === 404) setOrders([]);
+    }
   };
+
+  const fetchDrivers = async () => {
+    try {
+      const { data } = await axios.get('/driver/GetAllDrivers');
+      setDrivers(data);
+    } catch (err) {
+      console.error('Error fetching drivers:', err);
+      if (err.response?.status === 404) setDrivers([]);
+    }
+  };
+
+  const fetchVehicles = async () => {
+    try {
+      const { data } = await axios.get('/vehicle/GetAllVehicles');
+      setVehicles(data);
+    } catch (err) {
+      console.error('Error fetching vehicles:', err);
+      if (err.response?.status === 401) setVehicles([]);
+    }
+  };
+
+  const handleAddCustomer = async () => {
+    if (!newCustomer.shopName || !newCustomer.address) {
+      alert("Please fill all fields");
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post('/customer/AddCustomer', newCustomer);
+      alert('Customer added successfully!');
+      setNewCustomer({ shopName: "", address: "", latitude: -33.95, longitude: 18.45 });
+      await fetchCustomers();
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddDriver = async () => {
+    if (!newDriver.name || !newDriver.phoneNumber) {
+      alert("Please fill required fields");
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post('/driver/AddDriver', newDriver);
+      alert('Driver added successfully!');
+      setNewDriver({ name: "", phoneNumber: "", VehicleId: "" });
+      await fetchDrivers();
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateOrder = async () => {
+    if (!newOrder.customerId || !newOrder.items) {
+      alert("Select customer and enter items");
+      return;
+    }
+    setLoading(true);
+    try {
+      const customer = customers.find(c => c.id === newOrder.customerId);
+      const { data } = await axios.post('/order/CreateOrder', {
+        customerId: newOrder.customerId,
+        deliveryAddress: customer.address,
+        shipmentDetails: {
+          items: newOrder.items.split(",").map(i => i.trim()),
+          notes: newOrder.notes
+        }
+      });
+
+      const message = data.driver
+        ? `Order created! Driver assigned ${data.driver.distance}km away`
+        : 'Order created! Waiting for available driver';
+      alert(message);
+
+      setNewOrder({ customerId: "", items: "", notes: "" });
+      await fetchOrders();
+      setView("orders");
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualAssign = async () => {
+    if (!manualAssign.orderId || !manualAssign.driverId) {
+      alert("Select both order and driver");
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post('/order/AssignDriver', {
+        orderId: manualAssign.orderId,
+        driverId: manualAssign.driverId
+      });
+      alert('Driver assigned successfully!');
+      setManualAssign({ orderId: "", driverId: "" });
+      await fetchOrders();
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const trackOrder = async (order) => {
+    setSelectedOrder(order);
+    setView("tracking");
+
+    try {
+      const { data } = await axios.get(`/order/GetOrderTracking/${order.id}`);
+
+      if (data.driverLocation) {
+        setSelectedOrder({
+          ...order,
+          driverLocation: data.driverLocation,
+          estimatedArrival: data.estimatedArrival ? new Date(data.estimatedArrival) : null
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching tracking data:', err);
+    }
+  };
+
+  const cardStyle = { backgroundColor: '#374151', borderRadius: '12px', padding: '20px', marginBottom: '20px' };
+  const inputStyle = { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #4b5563', backgroundColor: '#1f2937', color: 'white', fontSize: '14px', marginBottom: '12px' };
+  const btnStyle = (disabled, color = '#3b82f6') => ({ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', backgroundColor: disabled ? '#4b5563' : color, color: 'white', fontWeight: '600', cursor: disabled ? 'not-allowed' : 'pointer' });
 
   return (
-    <div className="delivery-system-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        {/* Header */}
-        <div className="sidebar-header">
-          <div className="sidebar-title">📦 Delivery System</div>
-          <div className="sidebar-subtitle">Real-time Logistics Tracking</div>
-          <div className="nav-tabs">
-            <button
-              onClick={() => setView("create")}
-              className={`nav-tab ${view === "create" ? "nav-tab-active" : "nav-tab-inactive"}`}
-            >
-              <span>Create Order</span>
-            </button>
-            <button
-              onClick={() => setView("orders")}
-              className={`nav-tab ${view === "orders" ? "nav-tab-active" : "nav-tab-inactive"}`}
-            >
-              <span>Orders ({orders.length})</span>
-            </button>
+    <div style={{ display: 'flex', height: '100vh', fontFamily: 'system-ui' }}>
+      <div style={{ width: '450px', backgroundColor: '#1f2937', color: 'white', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid #374151' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>📦 Delivery System</div>
+          <div style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>Full Database Integration</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={() => setView("create")} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer', backgroundColor: view === "create" ? '#3b82f6' : '#374151', color: 'white' }}>Create</button>
+            <button onClick={() => setView("orders")} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer', backgroundColor: view === "orders" ? '#3b82f6' : '#374151', color: 'white' }}>Orders ({orders.length})</button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="sidebar-content">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
           {view === "create" && (
-            <div>
-              {/* Add Customer Section */}
-              <div className="card">
-                <h2 className="card-title">
-                  <MapPin size={20} /> Add New Customer
+            <>
+              {/* Add Customer */}
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MapPin size={20} /> Add Customer
                 </h2>
-                <div>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      placeholder="Shop Name"
-                      value={newCustomer.shopName}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, shopName: e.target.value })}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      placeholder="Address"
-                      value={newCustomer.address}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-row">
-                    <input
-                      type="number"
-                      step="0.0001"
-                      placeholder="Latitude"
-                      value={newCustomer.lat}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, lat: parseFloat(e.target.value) })}
-                      className="form-input"
-                    />
-                    <input
-                      type="number"
-                      step="0.0001"
-                      placeholder="Longitude"
-                      value={newCustomer.lng}
-                      onChange={(e) => setNewCustomer({ ...newCustomer, lng: parseFloat(e.target.value) })}
-                      className="form-input"
-                    />
-                  </div>
-                  <button
-                    onClick={handleAddCustomer}
-                    disabled={!newCustomer.shopName}
-                    className={`btn ${!newCustomer.shopName ? 'btn-disabled' : 'btn-success'}`}
-                  >
-                    <span>Add Customer</span>
-                  </button>
+                <input type="text" placeholder="Shop Name" value={newCustomer.shopName} onChange={(e) => setNewCustomer({ ...newCustomer, shopName: e.target.value })} style={inputStyle} />
+                <input type="text" placeholder="Address" value={newCustomer.address} onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })} style={inputStyle} />
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  <input type="number" step="0.0001" placeholder="Lat" value={newCustomer.latitude} onChange={(e) => setNewCustomer({ ...newCustomer, latitude: parseFloat(e.target.value) })} style={{ ...inputStyle, marginBottom: 0 }} />
+                  <input type="number" step="0.0001" placeholder="Lng" value={newCustomer.longitude} onChange={(e) => setNewCustomer({ ...newCustomer, longitude: parseFloat(e.target.value) })} style={{ ...inputStyle, marginBottom: 0 }} />
                 </div>
+                <button onClick={handleAddCustomer} disabled={loading} style={btnStyle(loading, '#10b981')}>{loading ? 'Adding...' : 'Add Customer'}</button>
               </div>
 
-              {/* Create Order Section */}
-              <div className="card">
-                <h2 className="card-title">
-                  <Package size={20} /> Create New Order
+              {/* Add Driver */}
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <UserPlus size={20} /> Add Driver
                 </h2>
-                <div>
-                  <div className="form-group">
-                    <select
-                      value={newOrder.customerId}
-                      onChange={(e) => setNewOrder({ ...newOrder, customerId: e.target.value })}
-                      className="form-select"
-                    >
-                      <option value="">Select Customer</option>
-                      {customers.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.shopName} - {c.address}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <input
-                      type="text"
-                      placeholder="Items (comma separated)"
-                      value={newOrder.items}
-                      onChange={(e) => setNewOrder({ ...newOrder, items: e.target.value })}
-                      className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <textarea
-                      placeholder="Delivery notes..."
-                      value={newOrder.notes}
-                      onChange={(e) => setNewOrder({ ...newOrder, notes: e.target.value })}
-                      className="form-textarea"
-                    />
-                  </div>
-                  <button
-                    onClick={handleCreateOrder}
-                    disabled={!newOrder.customerId || !newOrder.items}
-                    className={`btn ${(!newOrder.customerId || !newOrder.items) ? 'btn-disabled' : 'btn-primary'}`}
-                  >
-                    <span>Create Order & Assign Driver</span>
-                  </button>
-                </div>
+                <input type="text" placeholder="Driver Name" value={newDriver.name} onChange={(e) => setNewDriver({ ...newDriver, name: e.target.value })} style={inputStyle} />
+                <input type="text" placeholder="Phone Number" value={newDriver.phoneNumber} onChange={(e) => setNewDriver({ ...newDriver, phoneNumber: e.target.value })} style={inputStyle} />
+                <select value={newDriver.VehicleId} onChange={(e) => setNewDriver({ ...newDriver, VehicleId: e.target.value })} style={inputStyle}>
+                  <option value="">Select Vehicle (Optional)</option>
+                  {vehicles.map(v => <option key={v._id} value={v._id}>{v.name} - {v.make} {v.model}</option>)}
+                </select>
+                <button onClick={handleAddDriver} disabled={loading} style={btnStyle(loading, '#8b5cf6')}>{loading ? 'Adding...' : 'Add Driver'}</button>
+              </div>
+
+              {/* Create Order */}
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Package size={20} /> Create Order
+                </h2>
+                <select value={newOrder.customerId} onChange={(e) => setNewOrder({ ...newOrder, customerId: e.target.value })} style={inputStyle}>
+                  <option value="">Select Customer</option>
+                  {customers.map(c => <option key={c.id} value={c.id}>{c.shopName} - {c.address}</option>)}
+                </select>
+                <input type="text" placeholder="Items (comma separated)" value={newOrder.items} onChange={(e) => setNewOrder({ ...newOrder, items: e.target.value })} style={inputStyle} />
+                <textarea placeholder="Notes..." value={newOrder.notes} onChange={(e) => setNewOrder({ ...newOrder, notes: e.target.value })} style={{ ...inputStyle, minHeight: '80px' }} />
+                <button onClick={handleCreateOrder} disabled={!newOrder.customerId || !newOrder.items || loading} style={btnStyle(!newOrder.customerId || !newOrder.items || loading)}>{loading ? 'Creating...' : 'Create & Auto-Assign'}</button>
+              </div>
+
+              {/* Manual Driver Assignment */}
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Truck size={20} /> Assign Driver Manually
+                </h2>
+                <select value={manualAssign.orderId} onChange={(e) => setManualAssign({ ...manualAssign, orderId: e.target.value })} style={inputStyle}>
+                  <option value="">Select Order</option>
+                  {orders.filter(o => !o.driverId || o.status === 'pending').map(o => (
+                    <option key={o.id} value={o.id}>{o.orderId} - {o.customerName}</option>
+                  ))}
+                </select>
+                <select value={manualAssign.driverId} onChange={(e) => setManualAssign({ ...manualAssign, driverId: e.target.value })} style={inputStyle}>
+                  <option value="">Select Driver</option>
+                  {drivers.map(d => <option key={d._id} value={d.DriverId}>{d.name} ({d.DriverId})</option>)}
+                </select>
+                <button onClick={handleManualAssign} disabled={!manualAssign.orderId || !manualAssign.driverId || loading} style={btnStyle(!manualAssign.orderId || !manualAssign.driverId || loading, '#f59e0b')}>{loading ? 'Assigning...' : 'Assign Driver'}</button>
               </div>
 
               {/* Available Drivers */}
-              <div className="card">
-                <h3 className="card-title">
-                  <Truck size={16} /> Available Drivers
-                </h3>
-                <div className="driver-list">
-                  {drivers.filter(d => d.status === "available").map(driver => (
-                    <div key={driver.id} className="driver-item">
-                      {driver.name}
-                    </div>
-                  ))}
+              <div style={cardStyle}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>All Drivers ({drivers.length})</h3>
+                <div>
+                  {drivers.length === 0 ? (
+                    <p style={{ color: '#9ca3af', textAlign: 'center' }}>No drivers yet</p>
+                  ) : (
+                    drivers.map(d => (
+                      <div key={d._id} style={{ padding: '8px', backgroundColor: '#1f2937', borderRadius: '6px', marginBottom: '8px' }}>
+                        <div style={{ fontWeight: '500' }}>{d.name}</div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>{d.DriverId} • {d.phoneNumber}</div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            </div>
+            </>
           )}
 
           {view === "orders" && (
-            <div>
-              <h2 className="card-title" style={{ marginBottom: '20px' }}>All Orders</h2>
+            <>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px' }}>All Orders</h2>
               {orders.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon">📦</div>
-                  <p>No orders yet. Create your first order!</p>
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <div style={{ fontSize: '48px' }}>📦</div>
+                  <p style={{ color: '#9ca3af' }}>No orders yet</p>
                 </div>
               ) : (
-                <div className="order-list">
-                  {orders.map(order => (
-                    <div key={order.id} className="order-card" onClick={() => trackOrder(order)}>
-                      <div className="order-header">
-                        <div>
-                          <div className="order-title">{order.customerName}</div>
-                          <div className="order-id">{order.id}</div>
-                        </div>
-                        <span className={`status-badge status-${order.status.replace('_', '-')}`}>
-                          {order.status}
-                        </span>
+                orders.map(o => (
+                  <div key={o.id} onClick={() => trackOrder(o)} style={{ ...cardStyle, cursor: 'pointer', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{o.customerName}</div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>{o.orderId}</div>
                       </div>
-                      <div className="order-details">
-                        <p>🚗 Driver: {order.driverName}</p>
-                        <p>📦 Items: {order.items.join(", ")}</p>
-                        <p>🕐 Created: {order.createdAt.toLocaleTimeString()}</p>
-                      </div>
-                      <button className="btn btn-primary">
-                        <span>Track on Map</span>
-                      </button>
+                      <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', backgroundColor: o.status === 'delivered' ? '#10b981' : o.status === 'pending' ? '#f59e0b' : '#3b82f6' }}>{o.status.replace('_', ' ')}</span>
                     </div>
-                  ))}
-                </div>
+                    <div style={{ fontSize: '14px', color: '#d1d5db' }}>
+                      <p>🚗 {o.driverId || 'Unassigned'}</p>
+                      <p>📦 {o.items.join(", ")}</p>
+                      <p>🕐 {o.createdAt.toLocaleTimeString()}</p>
+                    </div>
+                  </div>
+                ))
               )}
-            </div>
+            </>
           )}
 
           {view === "tracking" && selectedOrder && (
-            <div>
-              <div className="tracking-header">
-                <button onClick={() => setView("orders")} className="back-button">
-                  ← Back to Orders
-                </button>
-              </div>
-              <div className="card tracking-info">
-                <h2 className="card-title">Order Tracking</h2>
-                <div className="tracking-row">
-                  <div className="tracking-label">Order</div>
-                  <div className="tracking-value">{selectedOrder.id}</div>
-                </div>
-                <div className="tracking-row">
-                  <div className="tracking-label">Customer</div>
-                  <div className="tracking-value">{selectedOrder.customerName}</div>
-                </div>
-                <div className="tracking-row">
-                  <div className="tracking-label">Driver</div>
-                  <div className="tracking-value">{selectedOrder.driverName}</div>
-                </div>
-                <div className="tracking-row">
-                  <div className="tracking-label">Status</div>
-                  <span className={`status-badge status-${selectedOrder.status.replace('_', '-')}`}>
-                    {selectedOrder.status}
-                  </span>
-                </div>
-                <div className="tracking-row">
-                  <div className="tracking-label">Items</div>
-                  <div className="tracking-value">{selectedOrder.items.join(", ")}</div>
+            <>
+              <button onClick={() => setView("orders")} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: '#374151', color: 'white', cursor: 'pointer', marginBottom: '20px' }}>← Back</button>
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>Order Tracking</h2>
+                {[
+                  ['Order', selectedOrder.orderId],
+                  ['Customer', selectedOrder.customerName],
+                  ['Driver', selectedOrder.driverId || 'Unassigned'],
+                  ['Items', selectedOrder.items.join(", ")]
+                ].map(([label, value]) => (
+                  <div key={label} style={{ marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #4b5563', display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#9ca3af' }}>{label}</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+                <div style={{ marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #4b5563', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: '#9ca3af' }}>Status</span>
+                  <span style={{ padding: '4px 12px', borderRadius: '12px', fontSize: '12px', backgroundColor: selectedOrder.status === 'delivered' ? '#10b981' : '#3b82f6' }}>{selectedOrder.status.replace('_', ' ')}</span>
                 </div>
                 {selectedOrder.notes && (
-                  <div className="tracking-row">
-                    <div className="tracking-label">Notes</div>
-                    <div className="tracking-value">{selectedOrder.notes}</div>
+                  <div style={{ marginBottom: '12px', paddingBottom: '8px', borderBottom: '1px solid #4b5563' }}>
+                    <div style={{ color: '#9ca3af', marginBottom: '4px' }}>Notes</div>
+                    <div>{selectedOrder.notes}</div>
                   </div>
                 )}
-                {selectedOrder.status === "delivered" && selectedOrder.actualDeliveryTime && (
-                  <div className="delivery-success">
-                    <CheckCircle size={16} />
-                    Delivered at {selectedOrder.actualDeliveryTime.toLocaleTimeString()}
+                {selectedOrder.actualDeliveryTime && (
+                  <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#10b981', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CheckCircle size={16} /> Delivered {selectedOrder.actualDeliveryTime.toLocaleTimeString()}
                   </div>
                 )}
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* Map */}
-      <div className="map-container">
-        <div className="map-wrapper">
-          <MapContainer
-            center={[WAREHOUSE.lat, WAREHOUSE.lng]}
-            zoom={12}
-            scrollWheelZoom={true}
-            style={{ height: "100%", width: "100%" }}
-          >
-            {/* Your existing map code stays the same */}
-          </MapContainer>
-        </div>
+      <div style={{ flex: 1, position: 'relative' }}>
+        <MapContainer center={[WAREHOUSE.lat, WAREHOUSE.lng]} zoom={12} style={{ height: '100%', width: '100%' }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={[WAREHOUSE.lat, WAREHOUSE.lng]} icon={warehouseIcon}>
+            <Popup><strong>Warehouse</strong></Popup>
+          </Marker>
+          {customers.map(c => (
+            <Marker key={c.id} position={[c.lat, c.lng]} icon={customerIcon}>
+              <Popup><strong>{c.shopName}</strong><br />{c.address}</Popup>
+            </Marker>
+          ))}
+          {orders.filter(o => o.driverLocation).map(o => (
+            <Marker key={o.id} position={[o.driverLocation.latitude, o.driverLocation.longitude]} icon={driverIcon}>
+              <Popup><strong>{o.driverId}</strong><br />{o.status}</Popup>
+            </Marker>
+          ))}
+        </MapContainer>
 
-        {/* Stats Overlay */}
-        <div className="stats-overlay">
-          <div className="stats-title">Live Statistics</div>
-          <div className="stat-item">
-            <Package size={16} className="stat-icon" />
-            <span className="stat-label">Total Orders:</span>
-            <span className="stat-value">{orders.length}</span>
+        <div style={{ position: 'absolute', top: '20px', right: '20px', backgroundColor: 'rgba(31,41,55,0.95)', color: 'white', padding: '16px', borderRadius: '12px', minWidth: '200px' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '12px' }}>Statistics</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Package size={16} />
+            <span>Total: {orders.length}</span>
           </div>
-          <div className="stat-item">
-            <Truck size={16} className="stat-icon" />
-            <span className="stat-label">Active:</span>
-            <span className="stat-value">
-              {orders.filter(o => o.status === "in_transit" || o.status === "assigned").length}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Truck size={16} />
+            <span>Active: {orders.filter(o => o.status === 'in_transit' || o.status === 'assigned').length}</span>
           </div>
-          <div className="stat-item">
-            <CheckCircle size={16} className="stat-icon" />
-            <span className="stat-label">Delivered:</span>
-            <span className="stat-value">{orders.filter(o => o.status === "delivered").length}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle size={16} />
+            <span>Delivered: {orders.filter(o => o.status === 'delivered').length}</span>
           </div>
         </div>
       </div>

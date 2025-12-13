@@ -4,7 +4,7 @@ import { authenticateToken } from '../middleware/auth.js'
 import { getCustomer } from '../middleware/recieveCustomer.js'
 import { createClient } from 'redis';
 import { redisClient } from '../server.js';
-import Driver from '../models/customer.js'
+
 
 const DEFAULT_EXPERIRATION = 3600
 const router = Router();

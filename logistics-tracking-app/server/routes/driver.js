@@ -1,8 +1,69 @@
+
 import { Router } from "express";
 import { authenticateToken } from '../middleware/auth.js';
 import { redisClient } from '../server.js';
 
 const router = Router();
+const DEFAULT_EXPIRATION = 3600;
+
+// Add new driver to database
+router.post("/AddDriver", authenticateToken, async (req, res) => {
+    try {
+        const { name, phoneNumber, VehicleId } = req.body;
+        
+        if (!name || !phoneNumber) {
+            return res.status(400).json({ message: "Name and phone number are required" });
+        }
+
+        const newDriver = new Driver({
+            name,
+            phoneNumber,
+            VehicleId: VehicleId || null
+        });
+
+        const savedDriver = await newDriver.save();
+        
+        // Clear Redis cache
+        await redisClient.del("drivers_list");
+        
+        res.status(201).json({
+            message: "Driver added successfully",
+            driver: savedDriver
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Could not add driver", error: err.message });
+    }
+});
+
+// Get all drivers from database
+router.get("/GetAllDrivers", authenticateToken, async (req, res) => {
+    try {
+        // Check cache first
+        const cached = await redisClient.get('drivers_list');
+        if (cached != null) {
+            return res.json(JSON.parse(cached));
+        }
+
+        const drivers = await Driver.find();
+        
+        if (drivers.length === 0) {
+            return res.status(404).json({ message: "No drivers found" });
+        }
+
+        // Cache for 1 hour
+        await redisClient.setEx(
+            'drivers_list',
+            DEFAULT_EXPIRATION,
+            JSON.stringify(drivers)
+        );
+
+        res.json(drivers);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Could not retrieve drivers", error: err.message });
+    }
+});
 
 // Update driver location (called from driver's mobile app/GPS)
 router.post("/UpdateDriverLocation", authenticateToken, async (req, res) => {
@@ -11,6 +72,13 @@ router.post("/UpdateDriverLocation", authenticateToken, async (req, res) => {
         if (!driverId || longitude == null || latitude == null) {
             return res.status(400).json({ message: "Missing fields" });
         }
+        
+        // Verify driver exists in database
+        const driver = await Driver.findOne({ DriverId: driverId });
+        if (!driver) {
+            return res.status(404).json({ message: "Driver not found in database" });
+        }
+
         // Redis GEOADD: longitude comes before latitude!
         await redisClient.geoAdd("drivers", {
             longitude: parseFloat(longitude),
@@ -21,6 +89,7 @@ router.post("/UpdateDriverLocation", authenticateToken, async (req, res) => {
         res.json({ 
             message: "Driver location updated",
             driverId,
+            driverName: driver.name,
             location: { longitude, latitude }
         });
     } catch (err) {
@@ -32,25 +101,22 @@ router.post("/UpdateDriverLocation", authenticateToken, async (req, res) => {
 // Get all driver locations within radius of warehouse
 router.get("/GetDriverLocations", authenticateToken, async (req, res) => {
     try {
-        // GEORADIUS syntax: key longitude latitude radius unit [WITHCOORD]
-        // Fixed: longitude (18.42) comes BEFORE latitude (-33.92)
         const drivers = await redisClient.sendCommand([
             "GEORADIUS",
             "drivers",
-            "18.42",      // warehouse longitude (X coordinate)
-            "-33.92",     // warehouse latitude (Y coordinate)
+            "18.42",      // warehouse longitude
+            "-33.92",     // warehouse latitude
             "100",        // radius
             "km",
             "WITHCOORD"
         ]);
 
-        // Format response: drivers is array of [member, [lon, lat]]
         const formatted = drivers.map((item) => {
             const member = item[0];
-            const coords = item[1]; // [longitude, latitude]
+            const coords = item[1];
             
             return {
-                member,
+                driverId: member,
                 coordinates: [parseFloat(coords[0]), parseFloat(coords[1])]
             };
         });
@@ -70,7 +136,7 @@ router.get("/GetDriverLocation/:driverId", authenticateToken, async (req, res) =
         const position = await redisClient.geoPos("drivers", driverId);
         
         if (!position || !position[0]) {
-            return res.status(404).json({ message: "Driver not found" });
+            return res.status(404).json({ message: "Driver not found or offline" });
         }
 
         res.json({
@@ -86,19 +152,34 @@ router.get("/GetDriverLocation/:driverId", authenticateToken, async (req, res) =
     }
 });
 
+// Get driver info by ID
+router.get("/GetDriver/:driverId", authenticateToken, async (req, res) => {
+    try {
+        const { driverId } = req.params;
+        const driver = await Driver.findOne({ DriverId: driverId });
+        
+        if (!driver) {
+            return res.status(404).json({ message: "Driver not found" });
+        }
+
+        res.json(driver);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Could not fetch driver" });
+    }
+});
+
 // Calculate distance between driver and location
 router.post("/CalculateDistance", authenticateToken, async (req, res) => {
     try {
         const { driverId, targetLongitude, targetLatitude } = req.body;
         
-        // Add temporary location to calculate distance
         await redisClient.geoAdd("drivers", {
             longitude: parseFloat(targetLongitude),
             latitude: parseFloat(targetLatitude),
             member: "temp_target"
         });
 
-        // Calculate distance
         const distance = await redisClient.geoDist(
             "drivers",
             driverId,
@@ -106,7 +187,6 @@ router.post("/CalculateDistance", authenticateToken, async (req, res) => {
             "km"
         );
 
-        // Clean up
         await redisClient.zRem("drivers", "temp_target");
 
         res.json({
@@ -125,7 +205,7 @@ router.delete("/RemoveDriver/:driverId", authenticateToken, async (req, res) => 
     try {
         const { driverId } = req.params;
         await redisClient.zRem("drivers", driverId);
-        res.json({ message: "Driver removed" });
+        res.json({ message: "Driver removed from active pool" });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Could not remove driver" });
