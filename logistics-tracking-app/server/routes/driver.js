@@ -2,11 +2,11 @@
 import { Router } from "express";
 import { authenticateToken } from '../middleware/auth.js';
 import { redisClient } from '../server.js';
-
+import Driver from '../models/Driver.js'
 const router = Router();
 const DEFAULT_EXPIRATION = 3600;
 
-// Add new driver to database
+// In your driver routes file - Update the AddDriver endpoint
 router.post("/AddDriver", authenticateToken, async (req, res) => {
     try {
         const { name, phoneNumber, VehicleId } = req.body;
@@ -18,16 +18,27 @@ router.post("/AddDriver", authenticateToken, async (req, res) => {
         const newDriver = new Driver({
             name,
             phoneNumber,
-            VehicleId: VehicleId || null
+            VehicleId: VehicleId || null,
+            location: {
+                type: 'Point',
+                coordinates: [18.42, -33.92]  // Warehouse location
+            }
         });
 
         const savedDriver = await newDriver.save();
+        
+        // Add driver to Redis at warehouse location
+        await redisClient.geoAdd("drivers", {
+            longitude: 18.42,
+            latitude: -33.92,
+            member: savedDriver.DriverId
+        });
         
         // Clear Redis cache
         await redisClient.del("drivers_list");
         
         res.status(201).json({
-            message: "Driver added successfully",
+            message: "Driver added successfully at warehouse location",
             driver: savedDriver
         });
     } catch (err) {

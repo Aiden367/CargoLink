@@ -1,4 +1,3 @@
-// OrderDeliverySystem.jsx - COMPLETE VERSION
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
 import { Package, Truck, MapPin, CheckCircle, UserPlus } from "lucide-react";
@@ -9,11 +8,14 @@ import 'leaflet/dist/leaflet.css';
 const WAREHOUSE = { lat: -33.92, lng: 18.42 };
 const API_BASE_URL = 'http://localhost:5000';
 
+// Configure axios defaults
 axios.defaults.baseURL = API_BASE_URL;
-const token = localStorage.getItem('token') || '';
-if (token) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
+
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('accessToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const createIcon = (color, emoji) => L.icon({
   iconUrl: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="18" fill="${color}" stroke="white" stroke-width="3"/><text x="20" y="26" font-size="18" text-anchor="middle">${emoji}</text></svg>`)}`,
@@ -67,7 +69,9 @@ export default function OrderDeliverySystem() {
 
   const fetchCustomers = async () => {
     try {
-      const { data } = await axios.get('/customer/GetAllCustomers');
+      const { data } = await axios.get('/customer/GetAllCustomers', {
+        headers: getAuthHeaders()
+      });
       setCustomers(data.map(c => ({
         id: c._id,
         shopName: c.shopName,
@@ -77,13 +81,18 @@ export default function OrderDeliverySystem() {
       })));
     } catch (err) {
       console.error('Error fetching customers:', err);
-      if (err.response?.status === 401) setCustomers([]);
+      if (err.response?.status === 401) {
+        console.error('Unauthorized - please login');
+        setCustomers([]);
+      }
     }
   };
 
   const fetchOrders = async () => {
     try {
-      const { data } = await axios.get('/order/GetAllOrders');
+      const { data } = await axios.get('/order/GetAllOrders', {
+        headers: getAuthHeaders()
+      });
       setOrders(data.map(o => ({
         id: o._id,
         orderId: o.orderId,
@@ -103,27 +112,40 @@ export default function OrderDeliverySystem() {
       })));
     } catch (err) {
       console.error('Error fetching orders:', err);
+      if (err.response?.status === 401) {
+        console.error('Unauthorized - please login');
+      }
       if (err.response?.status === 404) setOrders([]);
     }
   };
 
   const fetchDrivers = async () => {
     try {
-      const { data } = await axios.get('/driver/GetAllDrivers');
+      const { data } = await axios.get('/driver/GetAllDrivers', {
+        headers: getAuthHeaders()
+      });
       setDrivers(data);
     } catch (err) {
       console.error('Error fetching drivers:', err);
+      if (err.response?.status === 401) {
+        console.error('Unauthorized - please login');
+      }
       if (err.response?.status === 404) setDrivers([]);
     }
   };
 
   const fetchVehicles = async () => {
     try {
-      const { data } = await axios.get('/vehicle/GetAllVehicles');
+      const { data } = await axios.get('/vehicles/GetAllVehicles', {
+        headers: getAuthHeaders()
+      });
       setVehicles(data);
     } catch (err) {
       console.error('Error fetching vehicles:', err);
-      if (err.response?.status === 401) setVehicles([]);
+      if (err.response?.status === 401) {
+        console.error('Unauthorized - please login');
+        setVehicles([]);
+      }
     }
   };
 
@@ -134,12 +156,17 @@ export default function OrderDeliverySystem() {
     }
     setLoading(true);
     try {
-      await axios.post('/customer/AddCustomer', newCustomer);
+      await axios.post('/customer/AddCustomer', newCustomer, {
+        headers: getAuthHeaders()
+      });
       alert('Customer added successfully!');
       setNewCustomer({ shopName: "", address: "", latitude: -33.95, longitude: 18.45 });
       await fetchCustomers();
     } catch (err) {
       alert(`Error: ${err.response?.data?.message || err.message}`);
+      if (err.response?.status === 401) {
+        alert('Unauthorized - please login again');
+      }
     } finally {
       setLoading(false);
     }
@@ -152,12 +179,17 @@ export default function OrderDeliverySystem() {
     }
     setLoading(true);
     try {
-      await axios.post('/driver/AddDriver', newDriver);
+      await axios.post('/driver/AddDriver', newDriver, {
+        headers: getAuthHeaders()
+      });
       alert('Driver added successfully!');
       setNewDriver({ name: "", phoneNumber: "", VehicleId: "" });
       await fetchDrivers();
     } catch (err) {
       alert(`Error: ${err.response?.data?.message || err.message}`);
+      if (err.response?.status === 401) {
+        alert('Unauthorized - please login again');
+      }
     } finally {
       setLoading(false);
     }
@@ -178,6 +210,8 @@ export default function OrderDeliverySystem() {
           items: newOrder.items.split(",").map(i => i.trim()),
           notes: newOrder.notes
         }
+      }, {
+        headers: getAuthHeaders()
       });
 
       const message = data.driver
@@ -190,6 +224,9 @@ export default function OrderDeliverySystem() {
       setView("orders");
     } catch (err) {
       alert(`Error: ${err.response?.data?.message || err.message}`);
+      if (err.response?.status === 401) {
+        alert('Unauthorized - please login again');
+      }
     } finally {
       setLoading(false);
     }
@@ -205,12 +242,17 @@ export default function OrderDeliverySystem() {
       await axios.post('/order/AssignDriver', {
         orderId: manualAssign.orderId,
         driverId: manualAssign.driverId
+      }, {
+        headers: getAuthHeaders()
       });
       alert('Driver assigned successfully!');
       setManualAssign({ orderId: "", driverId: "" });
       await fetchOrders();
     } catch (err) {
       alert(`Error: ${err.response?.data?.message || err.message}`);
+      if (err.response?.status === 401) {
+        alert('Unauthorized - please login again');
+      }
     } finally {
       setLoading(false);
     }
@@ -221,7 +263,9 @@ export default function OrderDeliverySystem() {
     setView("tracking");
 
     try {
-      const { data } = await axios.get(`/order/GetOrderTracking/${order.id}`);
+      const { data } = await axios.get(`/order/GetOrderTracking/${order.id}`, {
+        headers: getAuthHeaders()
+      });
 
       if (data.driverLocation) {
         setSelectedOrder({
@@ -232,6 +276,9 @@ export default function OrderDeliverySystem() {
       }
     } catch (err) {
       console.error('Error fetching tracking data:', err);
+      if (err.response?.status === 401) {
+        console.error('Unauthorized - please login');
+      }
     }
   };
 

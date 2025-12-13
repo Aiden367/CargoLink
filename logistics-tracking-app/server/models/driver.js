@@ -13,7 +13,8 @@ const driverSchema = new mongoose.Schema({
     },
     VehicleId: {
         type: String,
-        unique: true
+        unique: true,
+        sparse: true
     },
     name: {
         type: String,
@@ -23,6 +24,34 @@ const driverSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number],
+            default: [18.42, -33.92]
+        }
+    },
+    isAvailable: {
+        type: Boolean,
+        default: true
+    },
+    currentOrderId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order',
+        default: null
+    },
+    isMoving: {
+        type: Boolean,
+        default: false
+    }
+}, {
+    timestamps: true
 });
+
+driverSchema.index({ location: '2dsphere' });
 
 export default mongoose.model('Driver', driverSchema);

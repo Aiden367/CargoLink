@@ -69,7 +69,7 @@ const Home = () => {
       ] = await Promise.all([
         axios.get('http://localhost:5000/order/GetActiveDeliveries', config).catch(e => ({ data: [] })),
         axios.get('http://localhost:5000/order/GetAllOrders', config).catch(e => ({ data: [] })),
-        axios.get('http://localhost:5000/drivers/GetDriverLocations', config).catch(e => ({ data: [] })),
+        axios.get('http://localhost:5000/driver/GetDriverLocations', config).catch(e => ({ data: [] })),
         axios.get('http://localhost:5000/product/GetProducts', config).catch(e => ({ data: { listOfProducts: [] } })),
         axios.get('http://localhost:5000/vendor/GetVendors', config).catch(e => ({ data: { listOfVendors: [] } })),
         axios.get('http://localhost:5000/vehicles/GetAllVehicles', config).catch(e => ({ data: [] }))

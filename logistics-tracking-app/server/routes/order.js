@@ -2,9 +2,11 @@
 import { Router } from "express";
 import Order from '../models/order.js';
 import Customer from '../models/customer.js';
+import Driver from '../models/Driver.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { getOrder } from '../middleware/recieveOrder.js';
 import { redisClient } from '../server.js';
+import { startDriverMovement, stopDriverMovement } from '../services/driverMovement.js';
 
 const router = Router();
 const WAREHOUSE = { longitude: 18.42, latitude: -33.92 };
@@ -14,17 +16,14 @@ router.post('/CreateOrder', authenticateToken, async (req, res) => {
     try {
         const { customerId, shipmentDetails, deliveryAddress } = req.body;
 
-        // Get customer location
         const customer = await Customer.findById(customerId);
         if (!customer) {
             return res.status(404).json({ message: "Customer not found" });
         }
 
-        // Extract customer coordinates
         const customerLongitude = customer.location.coordinates[0];
         const customerLatitude = customer.location.coordinates[1];
 
-        // Create order with customer location
         const orderData = new Order({
             customerId,
             customerLocation: {
@@ -38,7 +37,6 @@ router.post('/CreateOrder', authenticateToken, async (req, res) => {
 
         const newOrder = await orderData.save();
 
-        // Try to assign nearest available driver
         const assignedDriver = await assignNearestDriver(
             newOrder._id,
             customerLongitude,
@@ -50,8 +48,24 @@ router.post('/CreateOrder', authenticateToken, async (req, res) => {
             newOrder.status = 'assigned';
             await newOrder.save();
 
+            // Update driver in database
+            await Driver.findOneAndUpdate(
+                { DriverId: assignedDriver.driverId },
+                { 
+                    currentOrderId: newOrder._id,
+                    isAvailable: false 
+                }
+            );
+
+            // Start driver movement towards customer
+            startDriverMovement(
+                assignedDriver.driverId,
+                customerLatitude,
+                customerLongitude
+            );
+
             res.status(201).json({
-                message: "Order created and driver assigned",
+                message: "Order created and driver assigned. Driver is on the way!",
                 order: newOrder,
                 driver: assignedDriver
             });
@@ -72,17 +86,16 @@ router.post('/CreateOrder', authenticateToken, async (req, res) => {
 // Find and assign nearest available driver
 async function assignNearestDriver(orderId, customerLng, customerLat) {
     try {
-        // Find drivers within 20km radius of customer
         const nearbyDrivers = await redisClient.sendCommand([
             "GEORADIUS",
             "drivers",
             customerLng.toString(),
             customerLat.toString(),
-            "20", // 20km radius
+            "50", // 50km radius
             "km",
             "WITHCOORD",
             "WITHDIST",
-            "ASC" // Closest first
+            "ASC"
         ]);
 
         if (!nearbyDrivers || nearbyDrivers.length === 0) {
@@ -90,27 +103,23 @@ async function assignNearestDriver(orderId, customerLng, customerLat) {
             return null;
         }
 
-        // Get first available driver (not already assigned)
         for (const driver of nearbyDrivers) {
             const driverId = driver[0];
             const distance = parseFloat(driver[1]);
             const coords = driver[2];
 
-            // Check if driver is already assigned to an order
             const isAssigned = await redisClient.get(`driver:${driverId}:assigned`);
             
             if (!isAssigned) {
-                // Mark driver as assigned
                 await redisClient.setEx(
                     `driver:${driverId}:assigned`,
-                    3600, // 1 hour expiration
+                    7200, // 2 hours
                     orderId.toString()
                 );
 
-                // Store order-driver relationship
                 await redisClient.setEx(
                     `order:${orderId}:driver`,
-                    3600,
+                    7200,
                     driverId
                 );
 
@@ -142,29 +151,40 @@ router.post('/AssignDriver', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: "Order not found" });
         }
 
-        // Check if driver exists in Redis
         const driverLocation = await redisClient.geoPos("drivers", driverId);
         if (!driverLocation || !driverLocation[0]) {
             return res.status(404).json({ message: "Driver not found or offline" });
         }
 
-        // Check if driver is already assigned
         const existingAssignment = await redisClient.get(`driver:${driverId}:assigned`);
         if (existingAssignment && existingAssignment !== orderId.toString()) {
             return res.status(400).json({ message: "Driver already assigned to another order" });
         }
 
-        // Assign driver
         order.driverId = driverId;
         order.status = 'assigned';
         await order.save();
 
-        // Mark driver as assigned
-        await redisClient.setEx(`driver:${driverId}:assigned`, 3600, orderId.toString());
-        await redisClient.setEx(`order:${orderId}:driver`, 3600, driverId);
+        await redisClient.setEx(`driver:${driverId}:assigned`, 7200, orderId.toString());
+        await redisClient.setEx(`order:${orderId}:driver`, 7200, driverId);
+
+        // Update driver
+        await Driver.findOneAndUpdate(
+            { DriverId: driverId },
+            { 
+                currentOrderId: order._id,
+                isAvailable: false 
+            }
+        );
+
+        // Start driver movement
+        const customerLat = order.customerLocation.coordinates[1];
+        const customerLng = order.customerLocation.coordinates[0];
+        
+        startDriverMovement(driverId, customerLat, customerLng);
 
         res.json({
-            message: "Driver assigned successfully",
+            message: "Driver assigned successfully. Driver is on the way!",
             order,
             driverLocation: {
                 longitude: parseFloat(driverLocation[0].longitude),
@@ -175,61 +195,6 @@ router.post('/AssignDriver', authenticateToken, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Could not assign driver", error: err.message });
-    }
-});
-
-// Get order with driver location in real-time
-router.get('/GetOrderTracking/:orderId', authenticateToken, async (req, res) => {
-    try {
-        const { orderId } = req.params;
-
-        const order = await Order.findById(orderId).populate('customerId');
-        if (!order) {
-            return res.status(404).json({ message: "Order not found" });
-        }
-
-        let driverLocation = null;
-        let estimatedArrival = null;
-
-        if (order.driverId) {
-            // Get current driver location from Redis
-            const location = await redisClient.geoPos("drivers", order.driverId);
-            
-            if (location && location[0]) {
-                driverLocation = {
-                    longitude: parseFloat(location[0].longitude),
-                    latitude: parseFloat(location[0].latitude)
-                };
-
-                // Calculate distance to customer
-                const distance = await redisClient.geoDist(
-                    "drivers",
-                    order.driverId,
-                    `temp_customer_${orderId}`,
-                    "km"
-                );
-
-                if (distance) {
-                    // Estimate arrival (assuming 40 km/h average speed)
-                    const hours = parseFloat(distance) / 40;
-                    estimatedArrival = new Date(Date.now() + hours * 60 * 60 * 1000);
-                }
-            }
-        }
-
-        res.json({
-            order,
-            driverLocation,
-            estimatedArrival,
-            customerLocation: {
-                longitude: order.customerLocation.coordinates[0],
-                latitude: order.customerLocation.coordinates[1]
-            }
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Could not get tracking info", error: err.message });
     }
 });
 
@@ -250,11 +215,24 @@ router.patch('/UpdateDeliveryStatus', authenticateToken, getOrder, async (req, r
 
         order.status = status;
 
-        // If delivered or cancelled, free up the driver
         if (status === 'delivered' || status === 'cancelled') {
             if (order.driverId) {
+                // Stop driver movement
+                stopDriverMovement(order.driverId);
+                
+                // Free up the driver
                 await redisClient.del(`driver:${order.driverId}:assigned`);
                 await redisClient.del(`order:${order._id}:driver`);
+                
+                // Update driver availability
+                await Driver.findOneAndUpdate(
+                    { DriverId: order.driverId },
+                    { 
+                        isAvailable: true,
+                        currentOrderId: null,
+                        isMoving: false
+                    }
+                );
             }
             
             if (status === 'delivered') {
@@ -274,6 +252,71 @@ router.patch('/UpdateDeliveryStatus', authenticateToken, getOrder, async (req, r
     }
 });
 
+// Get order with driver location in real-time
+router.get('/GetOrderTracking/:orderId', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        const order = await Order.findById(orderId).populate('customerId');
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        let driverLocation = null;
+        let estimatedArrival = null;
+        let distanceToCustomer = null;
+
+        if (order.driverId) {
+            const location = await redisClient.geoPos("drivers", order.driverId);
+            
+            if (location && location[0]) {
+                driverLocation = {
+                    longitude: parseFloat(location[0].longitude),
+                    latitude: parseFloat(location[0].latitude)
+                };
+
+                // Add customer as temporary point to calculate distance
+                await redisClient.geoAdd("drivers", {
+                    longitude: order.customerLocation.coordinates[0],
+                    latitude: order.customerLocation.coordinates[1],
+                    member: `temp_customer_${orderId}`
+                });
+
+                const distance = await redisClient.geoDist(
+                    "drivers",
+                    order.driverId,
+                    `temp_customer_${orderId}`,
+                    "km"
+                );
+
+                // Remove temporary point
+                await redisClient.zRem("drivers", `temp_customer_${orderId}`);
+
+                if (distance) {
+                    distanceToCustomer = parseFloat(distance).toFixed(2);
+                    const hours = parseFloat(distance) / 40;
+                    estimatedArrival = new Date(Date.now() + hours * 60 * 60 * 1000);
+                }
+            }
+        }
+
+        res.json({
+            order,
+            driverLocation,
+            estimatedArrival,
+            distanceToCustomer,
+            customerLocation: {
+                longitude: order.customerLocation.coordinates[0],
+                latitude: order.customerLocation.coordinates[1]
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Could not get tracking info", error: err.message });
+    }
+});
+
 // Get all orders with driver info
 router.get('/GetAllOrders', authenticateToken, async (req, res) => {
     try {
@@ -283,7 +326,6 @@ router.get('/GetAllOrders', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: "No orders found" });
         }
 
-        // Enrich orders with real-time driver locations
         const enrichedOrders = await Promise.all(orders.map(async (order) => {
             let driverLocation = null;
             
@@ -313,7 +355,7 @@ router.get('/GetAllOrders', authenticateToken, async (req, res) => {
     }
 });
 
-// Get active deliveries (for dashboard)
+// Get active deliveries
 router.get('/GetActiveDeliveries', authenticateToken, async (req, res) => {
     try {
         const activeOrders = await Order.find({
