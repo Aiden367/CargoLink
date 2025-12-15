@@ -252,6 +252,164 @@
     text-decoration: underline;
 }
 
+/* ========== LOGIN INPUT STYLES ========== */
+
+/* Input Container Styling */
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.input-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+/* Base Input Styling */
+.login-form input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 15px;
+    color: #1f2937;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.login-form input::placeholder {
+    color: #9ca3af;
+}
+
+/* Focus State */
+.login-form input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: #ffffff;
+}
+
+/* Hover State */
+.login-form input:hover:not(:focus) {
+    border-color: #d1d5db;
+}
+
+/* Error State */
+.login-form input.error {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.login-form input.error:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Success/Valid State */
+.login-form input.valid {
+    border-color: #10b981;
+}
+
+.login-form input.valid:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Disabled State */
+.login-form input:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
+}
+
+/* Error Message */
+.input-error-message {
+    font-size: 13px;
+    color: #ef4444;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Input with Icon Container */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-right: 44px;
+}
+
+.input-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.input-with-icon input:focus ~ .input-icon {
+    color: #3b82f6;
+}
+
+/* Password Toggle Button */
+.password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.password-toggle:hover {
+    color: #3b82f6;
+    background: #f3f4f6;
+}
+
+/* Autofill Styling */
+.login-form input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    -webkit-text-fill-color: #1f2937;
+    border-color: #3b82f6;
+}
+
+/* Required Field Indicator */
+.input-label.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+/* Input Focus Animation */
+@keyframes inputFocus {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+}
+
+.login-form input:focus {
+    animation: inputFocus 0.3s ease;
+}
+
 @media (max-width: 1024px) {
     .login-sidebar {
         display: none;
@@ -273,5 +431,10 @@
     
     .login-header h2 {
         font-size: 28px;
+    }
+
+    .login-form input {
+        padding: 12px 14px;
+        font-size: 14px;
     }
 }

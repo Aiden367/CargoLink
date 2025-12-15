@@ -29,7 +29,7 @@ const Register = () => {
             const response = await axios.get("http://localhost:5000/user/GetAllUsers");
             const users = response.data;
             const usernameExists = users.some(u => u.username === userData.username);
-            
+
             if (usernameExists) {
                 setError("Username already exists. Please choose another.");
                 setLoading(false);
@@ -62,7 +62,7 @@ const Register = () => {
                         <h1 className="logo-text-register">SwiftTrack</h1>
                         <p className="logo-tagline-register">Join Our Logistics Network</p>
                     </div>
-                    
+
                     <div className="benefits-register">
                         <h3 className="benefits-title-register">Why Join SwiftTrack?</h3>
                         <div className="benefit-item-register">
@@ -97,27 +97,23 @@ const Register = () => {
                             {error}
                         </div>
                     )}
-
                     <form onSubmit={handleSubmit} className="register-form">
-                        <div className="form-row-register">
-                            <input
-                                label="First Name"
-                                type="text"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                placeholder="John"
-                                required
-                            />
-                            <input
-                                label="Last Name"
-                                type="text"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                placeholder="Doe"
-                                required
-                            />
-                        </div>
-
+                        <input
+                            label="First Name"
+                            type="text"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            placeholder="John"
+                            required
+                        />
+                        <input
+                            label="Last Name"
+                            type="text"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            placeholder="Doe"
+                            required
+                        />
                         <input
                             label="Username"
                             type="text"
@@ -171,8 +167,8 @@ const Register = () => {
                             <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
                         </label>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="submit-btn-register"
                             disabled={loading}
                         >

@@ -1,3 +1,4 @@
+// ========== Customer Model ==========
 import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
@@ -6,10 +7,16 @@ const counterSchema = new Schema({
   seq: { type: Number, default: 0 }
 });
 const Counter = mongoose.models.Counter || mongoose.model("Counter", counterSchema);
+
 const customerSchema = new Schema({
   customerID: {
     type: String,
     unique: true 
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   shopName: {
     type: String,
@@ -22,12 +29,11 @@ const customerSchema = new Schema({
       default: "Point"
     },
     coordinates: {
-      type: [Number], // [longitude, latitude]
+      type: [Number],
       required: true
     }
   }
 });
-
 
 customerSchema.pre("save", async function (next) {
   if (!this.customerID) {
@@ -41,6 +47,6 @@ customerSchema.pre("save", async function (next) {
   }
   next();
 });
-const Customer = mongoose.models.Customer || mongoose.model("Customer", customerSchema);
 
+const Customer = mongoose.models.Customer || mongoose.model("Customer", customerSchema);
 export default Customer;

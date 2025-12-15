@@ -1,21 +1,21 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { useEffect, useState } from "react";
-import { Package, Truck, MapPin, CheckCircle, UserPlus } from "lucide-react";
+import { Package, Truck, MapPin, CheckCircle, UserPlus, LogOut } from "lucide-react";
 import L from 'leaflet';
-import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
-
+import axios from "axios";
 const WAREHOUSE = { lat: -33.92, lng: 18.42 };
 const API_BASE_URL = 'http://localhost:5000';
 
-// Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
 
-// Helper function to get auth headers
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('accessToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+
+
+const authHeader = () => ({
+  headers: {
+    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+  },
+});
+
 
 const createIcon = (color, emoji) => L.icon({
   iconUrl: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><circle cx="20" cy="20" r="18" fill="${color}" stroke="white" stroke-width="3"/><text x="20" y="26" font-size="18" text-anchor="middle">${emoji}</text></svg>`)}`,
@@ -36,6 +36,8 @@ export default function OrderDeliverySystem() {
   const [vehicles, setVehicles] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [newCustomer, setNewCustomer] = useState({
     shopName: "", address: "", latitude: -33.95, longitude: 18.45
@@ -54,6 +56,15 @@ export default function OrderDeliverySystem() {
   });
 
   useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setIsAuthenticated(true); // ✅ THIS WAS MISSING
+
     fetchCustomers();
     fetchOrders();
     fetchDrivers();
@@ -67,207 +78,174 @@ export default function OrderDeliverySystem() {
     return () => clearInterval(interval);
   }, []);
 
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    window.location.href = "/login";
+  };
+
+  // ================= FETCH FUNCTIONS =================
+
   const fetchCustomers = async () => {
     try {
-      const { data } = await axios.get('/customer/GetAllCustomers', {
-        headers: getAuthHeaders()
-      });
-      setCustomers(data.map(c => ({
-        id: c._id,
-        shopName: c.shopName,
-        address: c.address,
-        lat: c.location.coordinates[1],
-        lng: c.location.coordinates[0]
-      })));
-    } catch (err) {
-      console.error('Error fetching customers:', err);
-      if (err.response?.status === 401) {
-        console.error('Unauthorized - please login');
-        setCustomers([]);
-      }
+      const res = await axios.get(
+        `${API_BASE_URL}/customer/GetAllCustomers`,
+        authHeader()
+      );
+      setCustomers(
+        res.data.map((c) => ({
+          id: c._id,
+          shopName: c.shopName,
+          address: c.address,
+          lat: c.location.coordinates[1],
+          lng: c.location.coordinates[0],
+        }))
+      );
+    } catch {
+      setCustomers([]);
     }
   };
 
   const fetchOrders = async () => {
     try {
-      const { data } = await axios.get('/order/GetAllOrders', {
-        headers: getAuthHeaders()
-      });
-      setOrders(data.map(o => ({
-        id: o._id,
-        orderId: o.orderId,
-        customerId: o.customerId?._id,
-        customerName: o.customerId?.shopName || 'Unknown',
-        customerLocation: {
-          lat: o.customerLocation?.coordinates[1] || 0,
-          lng: o.customerLocation?.coordinates[0] || 0
-        },
-        driverId: o.driverId || null,
-        items: o.shipmentDetails?.items || [],
-        notes: o.shipmentDetails?.notes || '',
-        status: o.status,
-        createdAt: new Date(o.createdAt),
-        actualDeliveryTime: o.actualDeliveryTime ? new Date(o.actualDeliveryTime) : null,
-        driverLocation: o.driverLocation
-      })));
-    } catch (err) {
-      console.error('Error fetching orders:', err);
-      if (err.response?.status === 401) {
-        console.error('Unauthorized - please login');
-      }
-      if (err.response?.status === 404) setOrders([]);
+      const res = await axios.get(
+        `${API_BASE_URL}/order/GetAllOrders`,
+        authHeader()
+      );
+      setOrders(
+        res.data.map((o) => ({
+          id: o._id,
+          orderId: o.orderId,
+          customerName: o.customerId?.shopName || "Unknown",
+          items: o.shipmentDetails?.items || [],
+          notes: o.shipmentDetails?.notes || "",
+          status: o.status,
+          driverId: o.driverId,
+          createdAt: new Date(o.createdAt),
+          actualDeliveryTime: o.actualDeliveryTime
+            ? new Date(o.actualDeliveryTime)
+            : null,
+          driverLocation: o.driverLocation,
+        }))
+      );
+    } catch {
+      setOrders([]);
     }
   };
 
   const fetchDrivers = async () => {
     try {
-      const { data } = await axios.get('/driver/GetAllDrivers', {
-        headers: getAuthHeaders()
-      });
-      setDrivers(data);
-    } catch (err) {
-      console.error('Error fetching drivers:', err);
-      if (err.response?.status === 401) {
-        console.error('Unauthorized - please login');
-      }
-      if (err.response?.status === 404) setDrivers([]);
+      const res = await axios.get(
+        `${API_BASE_URL}/driver/GetAllDrivers`,
+        authHeader()
+      );
+      setDrivers(res.data);
+    } catch {
+      setDrivers([]);
     }
   };
 
   const fetchVehicles = async () => {
     try {
-      const { data } = await axios.get('/vehicles/GetAllVehicles', {
-        headers: getAuthHeaders()
-      });
-      setVehicles(data);
-    } catch (err) {
-      console.error('Error fetching vehicles:', err);
-      if (err.response?.status === 401) {
-        console.error('Unauthorized - please login');
-        setVehicles([]);
-      }
+      const res = await axios.get(
+        `${API_BASE_URL}/vehicles/GetAllVehicles`,
+        authHeader()
+      );
+      setVehicles(res.data);
+    } catch {
+      setVehicles([]);
     }
   };
 
+  // ================= ACTIONS =================
+
   const handleAddCustomer = async () => {
-    if (!newCustomer.shopName || !newCustomer.address) {
-      alert("Please fill all fields");
-      return;
-    }
     setLoading(true);
     try {
-      await axios.post('/customer/AddCustomer', newCustomer, {
-        headers: getAuthHeaders()
+      await axios.post(
+        `${API_BASE_URL}/customer/AddCustomer`,
+        newCustomer,
+        authHeader()
+      );
+      setNewCustomer({
+        shopName: "",
+        address: "",
+        latitude: -33.95,
+        longitude: 18.45,
       });
-      alert('Customer added successfully!');
-      setNewCustomer({ shopName: "", address: "", latitude: -33.95, longitude: 18.45 });
-      await fetchCustomers();
+      fetchCustomers();
     } catch (err) {
-      alert(`Error: ${err.response?.data?.message || err.message}`);
-      if (err.response?.status === 401) {
-        alert('Unauthorized - please login again');
-      }
+      setError(err.response?.data?.message || "Failed to add customer");
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddDriver = async () => {
-    if (!newDriver.name || !newDriver.phoneNumber) {
-      alert("Please fill required fields");
-      return;
-    }
     setLoading(true);
     try {
-      await axios.post('/driver/AddDriver', newDriver, {
-        headers: getAuthHeaders()
-      });
-      alert('Driver added successfully!');
+      await axios.post(
+        `${API_BASE_URL}/driver/AddDriver`,
+        newDriver,
+        authHeader()
+      );
       setNewDriver({ name: "", phoneNumber: "", VehicleId: "" });
-      await fetchDrivers();
-    } catch (err) {
-      alert(`Error: ${err.response?.data?.message || err.message}`);
-      if (err.response?.status === 401) {
-        alert('Unauthorized - please login again');
-      }
+      fetchDrivers();
+    } catch {
+      setError("Failed to add driver");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreateOrder = async () => {
-    if (!newOrder.customerId || !newOrder.items) {
-      alert("Select customer and enter items");
-      return;
-    }
     setLoading(true);
     try {
-      const customer = customers.find(c => c.id === newOrder.customerId);
-      const { data } = await axios.post('/order/CreateOrder', {
-        customerId: newOrder.customerId,
-        deliveryAddress: customer.address,
-        shipmentDetails: {
-          items: newOrder.items.split(",").map(i => i.trim()),
-          notes: newOrder.notes
-        }
-      }, {
-        headers: getAuthHeaders()
-      });
-
-      const message = data.driver
-        ? `Order created! Driver assigned ${data.driver.distance}km away`
-        : 'Order created! Waiting for available driver';
-      alert(message);
-
+      await axios.post(
+        `${API_BASE_URL}/order/CreateOrder`,
+        {
+          customerId: newOrder.customerId,
+          shipmentDetails: {
+            items: newOrder.items.split(",").map((i) => i.trim()),
+            notes: newOrder.notes,
+          },
+        },
+        authHeader()
+      );
       setNewOrder({ customerId: "", items: "", notes: "" });
-      await fetchOrders();
+      fetchOrders();
       setView("orders");
-    } catch (err) {
-      alert(`Error: ${err.response?.data?.message || err.message}`);
-      if (err.response?.status === 401) {
-        alert('Unauthorized - please login again');
-      }
+    } catch {
+      setError("Failed to create order");
     } finally {
       setLoading(false);
     }
   };
 
   const handleManualAssign = async () => {
-    if (!manualAssign.orderId || !manualAssign.driverId) {
-      alert("Select both order and driver");
-      return;
-    }
     setLoading(true);
     try {
-      await axios.post('/order/AssignDriver', {
-        orderId: manualAssign.orderId,
-        driverId: manualAssign.driverId
-      }, {
-        headers: getAuthHeaders()
-      });
-      alert('Driver assigned successfully!');
+      await axios.post(
+        `${API_BASE_URL}/order/AssignDriver`,
+        manualAssign,
+        authHeader()
+      );
       setManualAssign({ orderId: "", driverId: "" });
-      await fetchOrders();
-    } catch (err) {
-      alert(`Error: ${err.response?.data?.message || err.message}`);
-      if (err.response?.status === 401) {
-        alert('Unauthorized - please login again');
-      }
+      fetchOrders();
+    } catch {
+      setError("Failed to assign driver");
     } finally {
       setLoading(false);
     }
   };
-
   const trackOrder = async (order) => {
     setSelectedOrder(order);
     setView("tracking");
 
     try {
-      const { data } = await axios.get(`/order/GetOrderTracking/${order.id}`, {
-        headers: getAuthHeaders()
-      });
+      const data = await apiCall(`/order/GetOrderTracking/${order.id}`);
 
-      if (data.driverLocation) {
+      if (data && data.driverLocation) {
         setSelectedOrder({
           ...order,
           driverLocation: data.driverLocation,
@@ -276,11 +254,23 @@ export default function OrderDeliverySystem() {
       }
     } catch (err) {
       console.error('Error fetching tracking data:', err);
-      if (err.response?.status === 401) {
-        console.error('Unauthorized - please login');
-      }
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#1f2937', color: 'white', fontFamily: 'system-ui' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+          <h2 style={{ marginBottom: '10px' }}>Authentication Required</h2>
+          <p style={{ color: '#9ca3af', marginBottom: '20px' }}>Please login to access the delivery system</p>
+          <button onClick={() => window.location.href = '/login'} style={{ padding: '12px 24px', borderRadius: '8px', border: 'none', backgroundColor: '#3b82f6', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const cardStyle = { backgroundColor: '#374151', borderRadius: '12px', padding: '20px', marginBottom: '20px' };
   const inputStyle = { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #4b5563', backgroundColor: '#1f2937', color: 'white', fontSize: '14px', marginBottom: '12px' };
@@ -290,8 +280,14 @@ export default function OrderDeliverySystem() {
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'system-ui' }}>
       <div style={{ width: '450px', backgroundColor: '#1f2937', color: 'white', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid #374151' }}>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>📦 Delivery System</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>📦 Delivery System</div>
+            <button onClick={handleLogout} style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', backgroundColor: '#374151', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} title="Logout">
+              <LogOut size={16} />
+            </button>
+          </div>
           <div style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>Full Database Integration</div>
+          {error && <div style={{ padding: '10px', backgroundColor: '#ef4444', borderRadius: '8px', fontSize: '14px', marginBottom: '16px' }}>{error}</div>}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => setView("create")} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer', backgroundColor: view === "create" ? '#3b82f6' : '#374151', color: 'white' }}>Create</button>
             <button onClick={() => setView("orders")} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', cursor: 'pointer', backgroundColor: view === "orders" ? '#3b82f6' : '#374151', color: 'white' }}>Orders ({orders.length})</button>
@@ -301,7 +297,6 @@ export default function OrderDeliverySystem() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
           {view === "create" && (
             <>
-              {/* Add Customer */}
               <div style={cardStyle}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <MapPin size={20} /> Add Customer
@@ -315,7 +310,6 @@ export default function OrderDeliverySystem() {
                 <button onClick={handleAddCustomer} disabled={loading} style={btnStyle(loading, '#10b981')}>{loading ? 'Adding...' : 'Add Customer'}</button>
               </div>
 
-              {/* Add Driver */}
               <div style={cardStyle}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <UserPlus size={20} /> Add Driver
@@ -329,7 +323,6 @@ export default function OrderDeliverySystem() {
                 <button onClick={handleAddDriver} disabled={loading} style={btnStyle(loading, '#8b5cf6')}>{loading ? 'Adding...' : 'Add Driver'}</button>
               </div>
 
-              {/* Create Order */}
               <div style={cardStyle}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Package size={20} /> Create Order
@@ -343,7 +336,6 @@ export default function OrderDeliverySystem() {
                 <button onClick={handleCreateOrder} disabled={!newOrder.customerId || !newOrder.items || loading} style={btnStyle(!newOrder.customerId || !newOrder.items || loading)}>{loading ? 'Creating...' : 'Create & Auto-Assign'}</button>
               </div>
 
-              {/* Manual Driver Assignment */}
               <div style={cardStyle}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Truck size={20} /> Assign Driver Manually
@@ -361,7 +353,6 @@ export default function OrderDeliverySystem() {
                 <button onClick={handleManualAssign} disabled={!manualAssign.orderId || !manualAssign.driverId || loading} style={btnStyle(!manualAssign.orderId || !manualAssign.driverId || loading, '#f59e0b')}>{loading ? 'Assigning...' : 'Assign Driver'}</button>
               </div>
 
-              {/* Available Drivers */}
               <div style={cardStyle}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>All Drivers ({drivers.length})</h3>
                 <div>

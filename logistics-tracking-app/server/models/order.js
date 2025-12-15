@@ -1,4 +1,4 @@
-// models/order.js
+// ========== Order Model ==========
 import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
@@ -7,13 +7,18 @@ const orderSchema = new mongoose.Schema({
         unique: true,
         default: () => 'ORDER-' + Date.now() + '-' + Math.floor(Math.random() * 1000)
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
     customerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Customer',
         required: true
     },
     driverId: {
-        type: String, // Redis driver ID
+        type: String,
         default: null
     },
     customerLocation: {
@@ -50,7 +55,6 @@ const orderSchema = new mongoose.Schema({
     }
 });
 
-// Index for geospatial queries
 orderSchema.index({ customerLocation: '2dsphere' });
 
 export default mongoose.model('Order', orderSchema);

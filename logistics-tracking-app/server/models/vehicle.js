@@ -1,17 +1,20 @@
-
 import mongoose, { Schema } from 'mongoose';
-
 
 function generateVehicleId() {
     return 'VEHICLE' + Math.floor(10000 + Math.random() * 90000); 
 }
 
 const vehicleSchema = new mongoose.Schema({
-    vehicleId : {
+    vehicleId: {
         type: String,
         required: true,
-        unique : true,
+        unique: true,
         default: generateVehicleId
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     VIN: {
         type: String,
@@ -41,8 +44,7 @@ const vehicleSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-})
+});
 
-const Vehicle = mongoose.model("Vehicle", vehicleSchema)
-
-export default Vehicle
+const Vehicle = mongoose.model("Vehicle", vehicleSchema);
+export default Vehicle;

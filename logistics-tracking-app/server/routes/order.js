@@ -25,6 +25,7 @@ router.post('/CreateOrder', authenticateToken, async (req, res) => {
         const customerLatitude = customer.location.coordinates[1];
 
         const orderData = new Order({
+            userId: req.user.id, // Add userId from authenticated user
             customerId,
             customerLocation: {
                 type: "Point",
@@ -151,6 +152,11 @@ router.post('/AssignDriver', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: "Order not found" });
         }
 
+        // Verify the order belongs to the authenticated user
+        if (order.userId.toString() !== req.user.id) {
+            return res.status(403).json({ message: "Unauthorized to assign driver to this order" });
+        }
+
         const driverLocation = await redisClient.geoPos("drivers", driverId);
         if (!driverLocation || !driverLocation[0]) {
             return res.status(404).json({ message: "Driver not found or offline" });
@@ -204,6 +210,11 @@ router.patch('/UpdateDeliveryStatus', authenticateToken, getOrder, async (req, r
     try {
         if (!order) {
             return res.status(404).json({ message: "Order does not exist" });
+        }
+
+        // Verify the order belongs to the authenticated user
+        if (order.userId.toString() !== req.user.id) {
+            return res.status(403).json({ message: "Unauthorized to update this order" });
         }
 
         const { status } = req.body;
@@ -262,6 +273,11 @@ router.get('/GetOrderTracking/:orderId', authenticateToken, async (req, res) => 
             return res.status(404).json({ message: "Order not found" });
         }
 
+        // Verify the order belongs to the authenticated user
+        if (order.userId.toString() !== req.user.id) {
+            return res.status(403).json({ message: "Unauthorized to view this order" });
+        }
+
         let driverLocation = null;
         let estimatedArrival = null;
         let distanceToCustomer = null;
@@ -317,10 +333,13 @@ router.get('/GetOrderTracking/:orderId', authenticateToken, async (req, res) => 
     }
 });
 
-// Get all orders with driver info
+// Get all orders with driver info (for authenticated user only)
 router.get('/GetAllOrders', authenticateToken, async (req, res) => {
     try {
-        const orders = await Order.find().populate('customerId').sort({ createdAt: -1 });
+        // Only get orders for the authenticated user
+        const orders = await Order.find({ userId: req.user.id })
+            .populate('customerId')
+            .sort({ createdAt: -1 });
         
         if (orders.length === 0) {
             return res.status(404).json({ message: "No orders found" });
@@ -355,10 +374,11 @@ router.get('/GetAllOrders', authenticateToken, async (req, res) => {
     }
 });
 
-// Get active deliveries
+// Get active deliveries (for authenticated user only)
 router.get('/GetActiveDeliveries', authenticateToken, async (req, res) => {
     try {
         const activeOrders = await Order.find({
+            userId: req.user.id, // Filter by authenticated user
             status: { $in: ['assigned', 'picked_up', 'in_transit'] }
         }).populate('customerId');
 
@@ -394,6 +414,45 @@ router.get('/GetActiveDeliveries', authenticateToken, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Could not get active deliveries", error: err.message });
+    }
+});
+
+// Delete order (new endpoint)
+router.delete('/DeleteOrder/:orderId', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        // Verify the order belongs to the authenticated user
+        if (order.userId.toString() !== req.user.id) {
+            return res.status(403).json({ message: "Unauthorized to delete this order" });
+        }
+
+        // If order has assigned driver, free them up
+        if (order.driverId) {
+            stopDriverMovement(order.driverId);
+            await redisClient.del(`driver:${order.driverId}:assigned`);
+            await redisClient.del(`order:${order._id}:driver`);
+            
+            await Driver.findOneAndUpdate(
+                { DriverId: order.driverId },
+                { 
+                    isAvailable: true,
+                    currentOrderId: null,
+                    isMoving: false
+                }
+            );
+        }
+
+        await order.deleteOne();
+        res.json({ message: "Order deleted successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Could not delete order", error: err.message });
     }
 });
 

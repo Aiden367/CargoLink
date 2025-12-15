@@ -16,8 +16,14 @@ const AddVendor = () => {
             if (vendorData == null) {
                 return console.log("Vendor data is empty")
             }
-            const response = await axios.post('http://localhost:5000/vendor/AddVendor', vendorData)
+            const response = await axios.post("http://localhost:5000/vendor/AddVendor", vendorData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+            })  
             console.log("Vendor sucessfully added", response.data)
+
+           
         } catch (err) {
             console.log("Error saving vendor data")
             console.error(err);

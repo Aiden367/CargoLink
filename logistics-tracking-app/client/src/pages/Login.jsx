@@ -40,7 +40,7 @@ const Login = () => {
                         <div className="logo-icon-login">
                             <Truck size={40} />
                         </div>
-                        <h1 className="logo-text-login">SwiftTrack</h1>
+                        <h1 className="logo-text-login">CargoLink</h1>
                         <p className="logo-tagline-login">Logistics Management System</p>
                     </div>
                     
@@ -121,7 +121,7 @@ const Login = () => {
                     </form>
 
                     <div className="login-footer">
-                        <p>Don't have an account <Link to="/register">Sign up</Link></p>
+                        <p>Don't have an account? <Link to="/register">Sign up</Link></p>
                     </div>
                 </div>
             </div>

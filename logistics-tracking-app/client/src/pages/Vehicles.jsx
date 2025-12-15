@@ -15,7 +15,11 @@ const Vehicles = () => {
     const navigate = useNavigate();
     const retrieveVehicles = async (e) => {
         try {
-            const response = await axios.get('http://localhost:5000/vehicles/GetAllVehicles')
+            const response = await axios.get('http://localhost:5000/vehicles/GetAllVehicles', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+            })
             setListOfVehicles(response.data)
         } catch (err) {
             console.err(err);
@@ -24,7 +28,11 @@ const Vehicles = () => {
     const handleSearchingForVehicle = async (e) => {
         try {
             e.preventDefault();
-            const response = await axios.get(`http://localhost:5000/vehicles/SearchForVehicle/${searchedVehicleId}`)
+            const response = await axios.get(`http://localhost:5000/vehicles/SearchForVehicle/${searchedVehicleId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+            })
             setListOfSearchedVehicle([response.data]);
             setIsSearching(true);
             console.log("Vehicle found:", response.data);

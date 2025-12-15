@@ -1,3 +1,4 @@
+// ========== Driver Model ==========
 import mongoose from 'mongoose';
 
 function generateDriverId() {
@@ -10,6 +11,11 @@ const driverSchema = new mongoose.Schema({
         required: true,
         unique: true,
         default: generateDriverId
+    },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     VehicleId: {
         type: String,
