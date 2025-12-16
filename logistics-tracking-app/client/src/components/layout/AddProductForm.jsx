@@ -31,12 +31,10 @@ const AddProduct = () => {
 
             const response = await axios.post(
                 'http://localhost:5000/product/AddProduct',
-                productData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+                productData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                },
                 }
             );
             console.log('Product added successfully:', response.data);
@@ -48,7 +46,7 @@ const AddProduct = () => {
             console.error('Error adding product:', err);
             
             if (err.response?.status === 401) {
-                setError('Session expired. Please login again.');
+                setError('Session expired. Please login again');
                 localStorage.removeItem('token');
                 navigate('/login');
             } else if (err.response?.status === 403) {
