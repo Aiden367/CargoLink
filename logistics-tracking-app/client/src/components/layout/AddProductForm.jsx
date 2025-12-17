@@ -50,7 +50,7 @@ const AddProduct = () => {
                 localStorage.removeItem('token');
                 navigate('/login');
             } else if (err.response?.status === 403) {
-                setError('You do not have permission to add products.');
+                setError('You do not have permission to add products');
             } else {
                 setError(err.response?.data?.message || 'Could not save product');
             }
